@@ -1,0 +1,8 @@
+{
+  "package": "ngl",
+  "version": "2.4.0",
+  "bundle": "package/dist/ngl.js",
+  "source": "npm package ngl 2.4.0, vendored into source tree for offline report rendering",
+  "sha256": "be8d4b16f1d73458efd70d2a3319ef2888fb6fa821732c319a99ff43a8e4f7e0",
+  "bytes": 1291567
+}

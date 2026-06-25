@@ -1,0 +1,28 @@
+[package]
+name = "taffish-report-render"
+kind = "tool"
+version = "0.1.0"
+release = 1
+license = "Apache-2.0"
+main = "src/main.taf"
+
+[repository]
+url = "https://github.com/taffish/taffish-report-render"
+
+[command]
+name = "taf-taffish-report-render"
+
+[runtime]
+pipe = true
+command_mode = false
+
+[container]
+image = "ghcr.io/taffish/taffish-report-render:0.1.0-r1"
+dockerfile = "docker/Dockerfile"
+build_platforms = "linux/amd64,linux/arm64"
+
+[smoke]
+backend = "docker"
+timeout = 60
+exist = ["report-render", "python3"]
+test = ["report-render --version | grep -F '0.1.0-r1' >/dev/null", "report-render components | grep -F native_subreport >/dev/null", "report-render components | grep -F native_subreport_collection >/dev/null", "report-render components | grep -F structure_viewer >/dev/null", "report-render components | grep -F tree_viewer >/dev/null", "report-render components | grep -F sequence_alignment >/dev/null", "report-render components | grep -F genome_browser >/dev/null", "report-render schema | grep -F '\"native_subreport_collection\"' >/dev/null", "report-render schema | grep -F '\"structure_viewer\"' >/dev/null", "report-render schema | grep -F '\"tree_viewer\"' >/dev/null", "report-render schema | grep -F '\"sequence_alignment\"' >/dev/null", "report-render schema | grep -F '\"genome_browser\"' >/dev/null"]

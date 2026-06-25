@@ -1,0 +1,10 @@
+{
+  "package": "igv",
+  "version": "3.8.3",
+  "metadata_url": "https://registry.npmjs.org/igv/latest",
+  "tarball": "https://registry.npmjs.org/igv/-/igv-3.8.3.tgz",
+  "integrity": "sha512-/aIDZNQjmvRV7fgIiLHUnTmR0uzZ2b8+pT+lVNzM8Ol6c5r1StQDAn9pHVdnX/QH7j3V8Fc3qBW7dQC5T9YzNQ==",
+  "bundle": "package/dist/igv.min.js",
+  "sha256": "acf4ee99cdc91be884203930db9c395bc86267552933b483da0b609c16ea05aa",
+  "bytes": 1500981
+}

@@ -1,0 +1,16 @@
+*.fasl
+*.dx64fsl
+*.lx64fsl
+__pycache__/
+*.py[cod]
+.DS_Store
+release.md
+target/*
+!target/.gitkeep
+testdata/fixtures/
+testdata/runtime/
+testdata/rendered/
+tests/rendered/
+tests/smoke-out/
+tests/test-real-run-out/
+.taf-*/
