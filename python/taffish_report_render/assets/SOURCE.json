@@ -1,0 +1,20 @@
+{
+  "echarts": {
+    "package": "echarts",
+    "version": "6.1.0",
+    "source_url": "https://registry.npmjs.org/echarts/-/echarts-6.1.0.tgz",
+    "bundle": "package/dist/echarts.min.js",
+    "license": "Apache-2.0",
+    "sha256": "b66b25aeb4df84e33199dc21694014d336d222cbd9deb0e5a7c14bd6aa0d0fd0",
+    "bytes": 1121883
+  },
+  "plotly": {
+    "package": "plotly.js",
+    "version": "1.2.0",
+    "source_url": "https://cdn.plot.ly/plotly-1.2.0.min.js",
+    "bundle": "plotly-1.2.0.min.js",
+    "license": "MIT",
+    "sha256": "60169d9df25530f1d5e29c663ceb18ea7492862acb308800fc5ab0f0bf31a41e",
+    "bytes": 1123006
+  }
+}

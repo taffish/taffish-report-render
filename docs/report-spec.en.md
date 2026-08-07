@@ -106,6 +106,11 @@ Every component must have:
 The renderer rejects unknown component types. Component-specific fields are
 documented in [components.en.md](components.en.md).
 
+Layout fields are typed renderer inputs, not CSS escape hatches. For example,
+`plot_card layout = "media"` accepts a numeric `media_image_ratio` only in the
+validated `0.25` to `0.70` range and predefined position/alignment/gap enums.
+Unknown values fail lint; report specs cannot inject arbitrary CSS strings.
+
 Example:
 
 ```toml

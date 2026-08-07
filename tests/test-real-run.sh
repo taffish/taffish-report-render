@@ -26,7 +26,7 @@ default_run=false
 fixtures=()
 
 flow_fixtures=(ngs-qc bam-qc phylogeny rnaseq-reference rnaseq-denovo chengdu-yuanda-report12)
-component_fixtures=(component-basic-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report)
+component_fixtures=(component-basic-report component-media-layout-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report)
 
 usage() {
     cat <<'EOF'
@@ -38,7 +38,7 @@ real-style component regression scenarios into ignored local outputs. The
 no-argument default cleans the previous output directory and renders:
 
   ngs-qc bam-qc phylogeny rnaseq-reference rnaseq-denovo chengdu-yuanda-report12
-  component-basic-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report
+  component-basic-report component-media-layout-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report
 
 The first group renders from corresponding real flow output trees, not from a
 trimmed "normal" fixture. RNA-seq reference and de novo scenarios use the public
@@ -1654,11 +1654,9 @@ TSV
   <text x="80" y="70" font-family="Arial,sans-serif" font-size="32" fill="#0b2530">Embedded SVG plot</text>
 </svg>
 SVG
-    cat > "$source_root/03_results/html/native.html" <<'HTML'
-<!doctype html><html><head><meta charset="utf-8"><title>Native component page</title>
-<style>body{font-family:system-ui,sans-serif;margin:2rem;color:#0b2530}button{padding:.5rem 1rem}</style></head>
-<body><h1>Native HTML payload</h1><p>This small page verifies native subreport bundling.</p><button onclick="document.body.dataset.clicked='yes'">Test button</button></body></html>
-HTML
+    local native_html_source="$app_root/testdata/fixtures/ngs-qc/03_results/html/P1.fastp.html"
+    require_file "$native_html_source"
+    cp "$native_html_source" "$source_root/03_results/html/native.html"
     cat > "$source_root/04_reports/methods.txt" <<'TEXT'
 This is a component-regression fixture. It is generated only from TOML and local data assets.
 TEXT
@@ -1669,7 +1667,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.1.0-r1"
+flow_version = "0.2.0-r1"
 analysis_mode = "component-regression-basic"
 title.en = "Basic component regression test"
 title.zh = "基础组件库测试"
@@ -1749,6 +1747,172 @@ TOML
     grep -F "data-cell-value=" "$report" >/dev/null
 }
 
+render_component_media_layout() {
+    local fixture="component-media-layout-report"
+    local fixture_dir
+    fixture_dir=$(fixture_work_dir "$fixture")
+    local source_root="$fixture_dir/source"
+    local spec="$fixture_dir/report.full.toml"
+    local phylogeny_image="$phylogeny_source/03_results/tree/plots/rectangular/tree.png"
+    local rnaseq_image="$rnaseq_reference_source/03_results/collected_plots/de.heatmap.png"
+    local structure_image="$chengdu_yuanda_report12_source/03_results/figures/pufa_structure_comparison_all_domains.fig2_structure_confidence.png"
+
+    require_file "$phylogeny_image"
+    require_file "$rnaseq_image"
+    require_file "$structure_image"
+    mkdir -p "$source_root/03_results/figures" "$source_root/04_reports" "$(dirname "$spec")"
+    cp "$phylogeny_image" "$source_root/03_results/figures/phylogeny-rectangular-tree.png"
+    cp "$rnaseq_image" "$source_root/03_results/figures/rnaseq-de-heatmap.png"
+    cp "$structure_image" "$source_root/03_results/figures/pufa-structure-confidence.png"
+
+    cat > "$source_root/04_reports/flow_summary.tsv" <<'TSV'
+metric	value
+component_family	plot_card-media
+real_images	3
+media_cards	4
+legacy_cards	2
+TSV
+
+    cat > "$spec" <<'TOML'
+schema_version = "0.1"
+template = "taffish-flow-report"
+language_default = "zh"
+
+[project]
+flow_name = "taffish-report-render"
+flow_version = "0.2.0-r1"
+analysis_mode = "component-media-layout-report"
+title.en = "Scientific media-layout regression"
+title.zh = "科研图文 media 布局回归"
+subtitle.en = "A TOML-only report using real phylogeny, RNA-seq and protein-structure figures to verify safe horizontal image-and-text cards."
+subtitle.zh = "仅通过 TOML 使用真实系统发育、RNA-seq 与蛋白结构图片，验证安全的横向图文卡片。"
+
+[[sections]]
+id = "media-cards"
+kind = "results"
+title.en = "Horizontal scientific narratives"
+title.zh = "横向科研图文叙事"
+note.en = "Each media card owns one row. The image and explanation stay close without changing the established grid and wide layouts."
+note.zh = "每个 media 卡片独占一行，让图片与解释保持邻近，同时不改变既有 grid 和 wide 布局。"
+
+[[sections.components]]
+type = "plot_card"
+id = "media-default-ratio"
+image = "03_results/figures/phylogeny-rectangular-tree.png"
+layout = "media"
+title.en = "Reference phylogeny and its biological interpretation"
+title.zh = "参考系统发育树及其生物学解释"
+note.en = "The default 0.42 image ratio keeps the complete rectangular tree visible while reserving enough room to explain topology, branch length and support. This layout is intended for contextual or conceptual figures rather than dense axis-heavy result plots."
+note.zh = "默认 0.42 图片比例可完整展示矩形系统发育树，同时为拓扑、枝长与支持度解读保留足够空间。该布局主要用于背景或概念型图片，而非坐标轴密集的正式结果图。"
+zoom = true
+default_fit = "contain"
+
+[[sections.components]]
+type = "plot_card"
+id = "media-right-portrait"
+image = "03_results/figures/pufa-structure-confidence.png"
+layout = "media"
+image_position = "right"
+media_image_ratio = 0.30
+media_vertical_align = "start"
+media_gap = "compact"
+title.en = "Tall protein-structure confidence figure"
+title.zh = "纵向蛋白结构置信度图"
+note.en = "A narrow right-hand image column is useful for this genuinely tall confidence panel. The renderer preserves the full image with object-fit contain; no crop, arbitrary CSS expression or report-specific HTML patch is used."
+note.zh = "这张真实纵向置信度图适合使用较窄的右侧图片栏。renderer 通过 object-fit contain 保留完整图片，不裁切、不接受任意 CSS 表达式，也不使用项目专用 HTML 补丁。"
+zoom = true
+default_fit = "contain"
+
+[[sections.components]]
+type = "plot_card"
+id = "media-centered-transparent"
+image = "03_results/figures/rnaseq-de-heatmap.png"
+layout = "media"
+image_position = "left"
+media_image_ratio = 0.50
+media_vertical_align = "center"
+media_gap = "relaxed"
+title.en = "Differential-expression heatmap with a deliberately long bilingual explanation"
+title.zh = "带有较长双语说明的差异表达热图"
+note.en = "This real RNA-seq heatmap verifies center alignment and resilient wrapping. Long links such as https://github.com/taffish/taffish-report-render/tree/main/docs and uninterrupted identifiers such as TAFFISH_REPORT_RENDER_MEDIA_LAYOUT_UNINTERRUPTED_IDENTIFIER_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 must remain inside the text column without widening the report or hiding the image actions."
+note.zh = "这张真实 RNA-seq 热图用于验证居中对齐和稳健换行。长链接与连续标识符必须始终留在文字栏内，不能撑宽报告、遮挡图片操作，也不能造成横向滚动。"
+caption.en = "Use the lightbox for detailed labels; the image remains embedded in the standalone HTML."
+caption.zh = "可通过大图模式阅读密集标签；图片仍完整内嵌在单文件 HTML 中。"
+zoom = true
+default_fit = "contain"
+
+[[sections.components]]
+type = "plot_card"
+id = "media-upper-bound"
+image = "03_results/figures/phylogeny-rectangular-tree.png"
+layout = "media"
+image_position = "right"
+media_image_ratio = 0.70
+media_vertical_align = "start"
+media_gap = "normal"
+title.en = "Upper safe image ratio"
+title.zh = "安全图片比例上界"
+note.en = "The validated upper boundary gives the figure more room while preserving a readable explanation column."
+note.zh = "经过校验的比例上界为图片提供更多空间，同时仍保留可读的说明栏。"
+zoom = true
+default_fit = "contain"
+
+[[sections]]
+id = "legacy-layouts"
+kind = "results"
+title.en = "Historical layout compatibility"
+title.zh = "历史布局兼容性"
+note.en = "The same report mixes media with unchanged grid and wide plot cards."
+note.zh = "同一报告同时混排 media 与行为不变的 grid、wide 图片卡片。"
+
+[[sections.components]]
+type = "plot_card"
+id = "legacy-grid"
+image = "03_results/figures/rnaseq-de-heatmap.png"
+layout = "grid"
+title.en = "Legacy grid card"
+title.zh = "历史 grid 卡片"
+note.en = "This card remains in the ordinary plot grid."
+note.zh = "该卡片继续进入普通图片网格。"
+
+[[sections.components]]
+type = "plot_card"
+id = "legacy-wide"
+image = "03_results/figures/phylogeny-rectangular-tree.png"
+layout = "wide"
+note_position = "top"
+title.en = "Legacy wide scientific figure"
+title.zh = "历史 wide 科学结果图"
+note.en = "Dense scientific plots may keep the established full-width layout with the note above the figure."
+note.zh = "坐标与标签密集的科学结果图仍可保持既有全宽布局，并把说明放在图片上方。"
+TOML
+
+    render_from_spec "$fixture" "$source_root" "$spec" 900000 0
+    local report="$fixture_dir/04_reports/taffish_report.html"
+    local files_index="$fixture_dir/04_reports/report_files.tsv"
+    test "$(grep -o 'class="plot-card plot-card-media' "$report" | wc -l | tr -d ' ')" = "4"
+    test "$(grep -o 'class="plot-media-stack"' "$report" | wc -l | tr -d ' ')" = "1"
+    grep -F 'data-media-image-ratio="0.42"' "$report" >/dev/null
+    grep -F 'data-media-image-ratio="0.3"' "$report" >/dev/null
+    grep -F 'data-media-image-ratio="0.5"' "$report" >/dev/null
+    grep -F 'data-media-image-ratio="0.7"' "$report" >/dev/null
+    grep -F 'plot-media-image-right' "$report" >/dev/null
+    grep -F 'plot-media-align-center' "$report" >/dev/null
+    grep -F 'plot-media-gap-relaxed' "$report" >/dev/null
+    grep -F '@media (max-width: 820px)' "$report" >/dev/null
+    grep -F 'grid-template-areas:' "$report" >/dev/null
+    grep -F '      "image"' "$report" >/dev/null
+    grep -F '      "copy"' "$report" >/dev/null
+    grep -F 'TAFFISH_REPORT_RENDER_MEDIA_LAYOUT_UNINTERRUPTED_IDENTIFIER_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' "$report" >/dev/null
+    grep -F 'data-open-image="media-centered-transparent"' "$report" >/dev/null
+    grep -F 'data:image/png;base64,' "$report" >/dev/null
+    grep -F 'legacy-grid' "$report" >/dev/null
+    grep -F 'plot-card-wide' "$report" >/dev/null
+    grep -F 'phylogeny-rectangular-tree.png' "$files_index" >/dev/null
+    grep -F 'rnaseq-de-heatmap.png' "$files_index" >/dev/null
+    grep -F 'pufa-structure-confidence.png' "$files_index" >/dev/null
+}
+
 render_component_echarts() {
     local fixture="component-echarts-report"
     local fixture_dir
@@ -1784,7 +1948,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.1.0-r1"
+flow_version = "0.2.0-r1"
 analysis_mode = "component-component-echarts-report"
 title.en = "ECharts interactive plot library test"
 title.zh = "ECharts 交互图组件库测试"
@@ -1878,7 +2042,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.1.0-r1"
+flow_version = "0.2.0-r1"
 analysis_mode = "component-component-tree-alignment-report"
 title.en = "Tree and alignment component regression test"
 title.zh = "树和多序列比对组件库测试"
@@ -2064,7 +2228,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.1.0-r1"
+flow_version = "0.2.0-r1"
 analysis_mode = "component-component-igv-report"
 title.en = "IGV genome browser library test"
 title.zh = "IGV 基因组浏览组件库测试"
@@ -2163,7 +2327,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.1.0-r1"
+flow_version = "0.2.0-r1"
 analysis_mode = "component-ngl-native-report"
 title.en = "Real NGL structure component regression"
 title.zh = "真实 NGL 结构组件回归"
@@ -2308,6 +2472,9 @@ for fixture in "${fixtures[@]}"; do
             ;;
         component-basic-report)
             render_component_basic_components
+            ;;
+        component-media-layout-report)
+            render_component_media_layout
             ;;
         component-echarts-report)
             render_component_echarts

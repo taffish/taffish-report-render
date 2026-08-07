@@ -30,6 +30,11 @@
 ECharts 是当前 `interactive_plot` 的固定交互图 runtime。它用于把已经计算完成的结果表做成可缩放、可悬停、
 可按阈值筛选的浏览器视图，例如 RNA-seq 的火山图、MA 图和 ORA dotplot。
 
+当前固定版本为 `6.1.0`，来源为官方 npm 包 `echarts@6.1.0` 的
+`dist/echarts.min.js`，许可证为 Apache-2.0，SHA-256 为
+`b66b25aeb4df84e33199dc21694014d336d222cbd9deb0e5a7c14bd6aa0d0fd0`。
+源码记录保存在 `assets/SOURCE.json`，bundle 内保留上游许可证声明。
+
 实现边界：
 
 - `interactive_plot` 从本地 TSV/CSV 读取必要列，并只把需要展示的字段编译成 JSON payload；
@@ -58,6 +63,11 @@ controls_open = false
 Plotly 1.2.0 只保留用于兼容历史 fastp HTML 报告中的远程 loader。renderer 会把已知远程
 `plotly-1.2.0.min.js` URL 替换成内嵌本地 runtime，让 fastp 原生页面在 standalone
 主报告中离线打开。新的 `interactive_plot` 不再使用 Plotly。
+
+当前 bundle 来源为 Plotly 官方 CDN 的 `plotly-1.2.0.min.js`，许可证为 MIT，
+SHA-256 为 `60169d9df25530f1d5e29c663ceb18ea7492862acb308800fc5ab0f0bf31a41e`。
+来源记录和完整许可证分别保存在 `assets/SOURCE.json` 与
+`assets/LICENSE.plotly.txt`。
 
 ### NGL / `structure_viewer`
 

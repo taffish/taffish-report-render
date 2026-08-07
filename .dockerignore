@@ -1,0 +1,14 @@
+.git
+.github
+.DS_Store
+__pycache__
+*.py[cod]
+.taf-*
+target
+tests/rendered
+tests/smoke-out
+tests/test-real-run-out
+testdata/fixtures
+testdata/runtime
+testdata/rendered
+

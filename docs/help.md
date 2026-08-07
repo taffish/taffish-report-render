@@ -1,4 +1,4 @@
-taffish-report-render 0.1.0-r1
+taffish-report-render 0.2.0-r1
 
 Usage:
   taf-taffish-report-render COMMAND [OPTIONS]
@@ -50,6 +50,10 @@ Common components:
   native_subreport, structure_viewer, genome_browser, tree_viewer,
   sequence_alignment, plot_collection, table_collection,
   code_file_collection, native_subreport_collection
+
+Plot layouts:
+  plot_card supports grid, wide, and responsive media layouts.
+  See the component manual for validated media ratios and alignment fields.
 
 Path rule:
   All source/image/path values are relative to --root.

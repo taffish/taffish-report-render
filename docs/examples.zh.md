@@ -66,7 +66,7 @@ taf-taffish-report-render render \
 高级参数槽。例如：
 
 ```taf
-[[taf: taf-taffish-report-render-v0.1.0-r1 render \
+[[taf: taf-taffish-report-render-v0.2.0-r1 render \
   --spec '"$report_spec"' \
   --root '"$outdir"' \
   --out '"$report_html"' \
@@ -76,6 +76,33 @@ taf-taffish-report-render render \
 ```
 
 这里的 `::(@:)report-render-step::` 默认必须为空，只为高级用户保留额外 renderer 参数接口。
+
+## 从项目私有横向补丁迁移到 media
+
+过去 flow 可能先生成普通图片卡，再注入私有 HTML/CSS，把文献图或概念图放在长说明旁边。
+现在应直接改用 renderer 的 TOML 契约：
+
+```toml
+[[sections.components]]
+type = "plot_card"
+id = "infection-model"
+image = "03_results/figures/infection-model.webp"
+layout = "media"
+image_position = "right"
+media_image_ratio = 0.35
+media_vertical_align = "center"
+media_gap = "relaxed"
+zoom = true
+default_fit = "contain"
+title.zh = "侵染模型"
+title.en = "Infection model"
+note.zh = "桌面端解释与完整、未裁切的图片保持相邻。"
+note.en = "Interpretation stays beside the complete uncropped figure on desktop."
+```
+
+不再需要渲染后修改 HTML、JavaScript 或 CSS。`820px` 及以下会自动变成图片在前的单栏。
+坐标轴和标签密集的正式结果图仍应使用 `layout = "wide"` 与
+`note_position = "top"`。
 
 ## NGS QC 模式
 

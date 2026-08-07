@@ -96,6 +96,35 @@ default_abs_log2fc = 1.0
 The browser-side controls only filter and recolor existing rows. They do not
 re-run differential expression.
 
+## Replace a Project-Specific Side-by-Side Patch
+
+Before `layout = "media"`, a flow might render a normal plot card and then add
+private HTML/CSS to place a literature or concept figure beside a long note.
+Replace that patch with the renderer-owned TOML contract:
+
+```toml
+[[sections.components]]
+type = "plot_card"
+id = "infection-model"
+image = "03_results/figures/infection-model.webp"
+layout = "media"
+image_position = "right"
+media_image_ratio = 0.35
+media_vertical_align = "center"
+media_gap = "relaxed"
+zoom = true
+default_fit = "contain"
+title.en = "Infection model"
+title.zh = "侵染模型"
+note.en = "Interpretation stays beside the complete uncropped figure on desktop."
+note.zh = "桌面端解释与完整、未裁切的图片保持相邻。"
+```
+
+No post-render HTML, JavaScript, or CSS modification is needed. At `820px` and
+below the renderer automatically puts the image above the text. Dense
+axis-heavy result plots should continue to use `layout = "wide"` and
+`note_position = "top"`.
+
 ## Structure Viewer Example
 
 ```toml

@@ -21,6 +21,11 @@ external JavaScript files, write custom HTML, or patch generated reports.
 
 Used by `interactive_plot`.
 
+- Version: `6.1.0`
+- Source: official npm package `echarts@6.1.0`, `dist/echarts.min.js`
+- License: Apache-2.0; the bundled file retains its upstream license notice
+- SHA-256: `b66b25aeb4df84e33199dc21694014d336d222cbd9deb0e5a7c14bd6aa0d0fd0`
+
 Supported report uses:
 
 - volcano plot;
@@ -32,9 +37,22 @@ The component embeds already-computed result rows. Browser controls only adjust
 view state, thresholds, colors, filters, and summary counts. They do not
 recompute statistics.
 
+## Plotly
+
+Plotly.js `1.2.0` is retained only to replace the known remote loader in legacy
+fastp HTML reports. New `interactive_plot` components use ECharts instead.
+
+- Version: `1.2.0`
+- Source: official Plotly CDN bundle `plotly-1.2.0.min.js`
+- License: MIT; the full notice is bundled as `assets/LICENSE.plotly.txt`
+- SHA-256: `60169d9df25530f1d5e29c663ceb18ea7492862acb308800fc5ab0f0bf31a41e`
+
 ## NGL
 
 Used by `structure_viewer` when `runtime = "ngl"`.
+
+- Version: `2.4.0`
+- Source, checksum, and license: `runtime_packs/ngl/SOURCE.json` and `LICENSE`
 
 Supported report uses:
 
@@ -51,6 +69,9 @@ fallback view when WebGL or NGL initialization fails.
 ## IGV.js
 
 Used by `genome_browser` when `runtime = "igv"`.
+
+- Version: `3.8.3`
+- Source, checksum, and license: `runtime_packs/igv/SOURCE.json` and `LICENSE`
 
 Supported report uses:
 

@@ -101,11 +101,16 @@ component-echarts-report
 component-tree-alignment-report
 component-igv-report
 component-ngl-native-report
+component-media-layout-report
 ```
 
 这些组件回归场景不是 demo。即使数据量很小，也必须有真实生信语义、真实 runtime、
 真实报告章节、固定 `04_reports/` sidecar 和可审计来源；不能用假 HTML、测试版 Python
 行为、空白 viewer 或 NGL/IGV shim 通过 `test-real-run`。
+
+`component-media-layout-report` 使用真实系统发育树、RNA-seq 热图和蛋白结构置信度图片，
+覆盖横图、竖图、透明背景图、左右换位、`0.30/0.42/0.50/0.70` 比例、顶部/居中对齐、
+三种预定义间距、长中英文说明、连续 media 卡片以及 media/grid/wide 混排。
 默认 full real-run 会在渲染前预检本轮选中场景需要的全部浏览器 runtime；如果 NGL 和
 IGV 同时缺失，脚本应同时报告这两个真实 runtime 缺口，不能只在第一个缺口处停止而让
 后续组件没有被检查。

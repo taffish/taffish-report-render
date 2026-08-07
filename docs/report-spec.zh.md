@@ -155,6 +155,10 @@ title.en = "Volcano plot"
 - 左侧目录顺序必须和 TOML 中的章节、组件顺序一致；
 - component 只描述展示方式，不应包含执行命令或分析逻辑。
 
+布局字段是有类型、经过校验的 renderer 输入，不是任意 CSS 逃生口。例如
+`plot_card layout = "media"` 的 `media_image_ratio` 只能是 `0.25–0.70` 内的有限数值，
+位置、对齐和间距只能使用固定枚举。未知值会在 lint 阶段失败，TOML 不能注入任意 CSS。
+
 ## Collection Components
 
 collection 组件是编译期辅助写法，用于把一个 TSV 索引批量展开成普通稳定组件。它们不会改变

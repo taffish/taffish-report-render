@@ -161,6 +161,13 @@ Current stable components include:
 - `code_file_collection`
 - `native_subreport_collection`
 
+`table_preview` and `quality_gate_table` place interpretation text above the
+table. `workflow_diagram` supports paired `step_en` / `step_zh`, `note_en` /
+`note_zh`, and `status_en` / `status_zh` fields. `plot_card` supports the
+historical `grid` and `wide` layouts plus a responsive `media` layout for a
+side-by-side figure and explanation. Media cards use validated ratios and
+renderer-defined spacing; report specs never inject arbitrary CSS.
+
 Use `taf-taffish-report-render component-doc COMPONENT` for concise CLI field
 documentation, or read the full
 [component reference](docs/components.en.md).
@@ -205,3 +212,12 @@ TAFFISH report. Do not use it as:
 
 When a report needs new visual behavior, add or extend a fixed renderer
 component and document its TOML contract instead of writing one-off report code.
+
+## License
+
+The TAFFISH app, renderer source, Dockerfile, documentation, and report shell are
+licensed under Apache-2.0. Bundled browser runtimes retain their upstream
+licenses and provenance: ECharts is Apache-2.0; legacy Plotly.js, NGL, and IGV.js
+are MIT-licensed. Exact versions, source URLs, checksums, and notices are recorded
+under `python/taffish_report_render/assets/` and
+`python/taffish_report_render/runtime_packs/`.

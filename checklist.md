@@ -312,6 +312,10 @@
 - [ ] `component-ngl-native-report` 可在结构生物学语境中复用真实 target/reference
       PDB 叠合、静态结构图、motif/site table 和相似性表，渲染 NGL/PDB 结构查看、
       完整 PDB `pdbText` payload、内置 fallback atoms、位点 marker 和静态图 lightbox。
+- [ ] `component-media-layout-report` 使用真实横图、竖图和透明背景图覆盖 `plot_card`
+      的 `layout="media"`，包含左右图片、`0.30/0.42/0.50/0.70` 比例、start/center、
+      compact/normal/relaxed、长中英文说明、连续三张以上 media 卡片和
+      media/grid/wide 混排。
 - [ ] 生成的 fixture 报告在视觉和能力上不低于复制来的 baseline 或来源路径中记录的现有报告。
 - [ ] 记录回归输出体量；接近 GitHub 50 MB 建议线的报告需要显式 review。
 
@@ -327,6 +331,17 @@
 - [ ] `plot_card` 图片保持稳定比例和合理最大高度，按钮不因卡片宽度变窄而折成竖排。
 - [ ] `plot_card` 默认可打开大图 lightbox；lightbox 打开时整图先适配当前窗口，
       并支持关闭、Esc、放大、缩小、回到适配窗口，且图片仍以内嵌 data URI 交付。
+- [ ] `plot_card layout="media"` 每张卡片独占一行并由 renderer 的 CSS Grid 实现；
+      `image_position` 只允许 left/right，`media_vertical_align` 只允许 start/center，
+      `media_gap` 只允许 compact/normal/relaxed；不能把 media 卡片塞入普通 plot grid。
+- [ ] `media_image_ratio` 默认 `0.42`，只接受 `0.25–0.70` 内的有限数值；字符串、NaN、
+      无穷值和越界值必须 lint 失败，renderer 只能把校验后的数值转换为 CSS Grid 比例，
+      TOML 不接受任意 CSS 表达式。
+- [ ] media 两栏都必须 `min-width: 0`，图片必须保持原始比例、`object-fit: contain` 且不裁切；
+      长中英文标题、连续英文字符串、长链接和操作按钮必须留在卡片内并可合理换行。
+- [ ] media 响应式视觉检查固定覆盖 `1440/1280/820/768/390px`：`820px` 及以下始终
+      图片在前、文字在后，忽略桌面比例，不得出现横向滚动、文字重叠、图片裁切或按钮丢失；
+      `grid`、`wide` 历史 fixture 必须同时回归，打印样式不得切断单张 media 卡片。
 - [ ] 大图 lightbox 打开时必须锁住背后报告页面滚动；在弹层、图片或已适配窗口状态下滚轮
       不应导致背景页面上下滚动，放大后滚轮只作用于弹层内图片滚动区域。
 - [ ] `interactive_plot` 只能用固定组件和 TOML 字段声明，不允许 flow 私自写 Plotly/ECharts

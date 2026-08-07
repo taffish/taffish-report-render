@@ -8,6 +8,7 @@ import base64
 import csv
 import hashlib
 import json
+import math
 import mimetypes
 import os
 import re
@@ -160,10 +161,14 @@ COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
     },
     "plot_card": {
         "kind": "render",
-        "summary": "Embed a primary image as a data URI with an optional large-image viewer.",
+        "summary": "Embed a primary image as a data URI using grid, wide, or responsive media layout with an optional large-image viewer.",
         "required": ["image"],
         "path_fields": ["image"],
-        "fields": ["id", "type", "image", "title", "note", "caption", "zoom", "default_fit"],
+        "fields": [
+            "id", "type", "image", "title", "note", "caption", "zoom",
+            "default_fit", "layout", "note_position", "image_position",
+            "media_image_ratio", "media_vertical_align", "media_gap",
+        ],
     },
     "native_subreport": {
         "kind": "render",
@@ -249,11 +254,11 @@ COMPONENT_REGISTRY.update(COMPONENT_REGISTRY_EXTENSIONS)
 COMPONENT_DOCS: dict[str, str] = {
     "dashboard_cards": "dashboard_cards reads a TSV summary table and renders compact report-level cards. Common columns are metric, value, note, note_en, and note_zh.",
     "status_grid": "status_grid reads a TSV module/status table and renders status cards. Common columns are module, step, name, status, note_en, and note_zh.",
-    "quality_gate_table": "quality_gate_table renders threshold checks from a TSV table. Language-paired columns such as criterion_en/criterion_zh are folded into one multilingual column.",
-    "table_preview": "table_preview renders a TSV/CSV file as a compact preview and, within size limits, an in-place full table viewer with search, sorting, two-axis scrolling, cell expansion, and copy support.",
+    "quality_gate_table": "quality_gate_table renders threshold checks from a TSV table. Language-paired columns such as criterion_en/criterion_zh are folded into one multilingual column, and the component note is displayed above the table.",
+    "table_preview": "table_preview renders a TSV/CSV file as a compact preview and, within size limits, an in-place full table viewer with search, sorting, two-axis scrolling, cell expansion, copy support, and a visible component note above the table.",
     "code_file": "code_file embeds a small text artifact such as a Newick tree, short config, command snippet, or small JSON block, with an optional copy button.",
-    "workflow_diagram": "workflow_diagram renders a linear workflow route from a TSV table containing step, flow, status, or outdir-style columns.",
-    "plot_card": "plot_card embeds a PNG/SVG/JPEG image as a data URI and supports a fit-to-window large-image viewer by default.",
+    "workflow_diagram": "workflow_diagram renders a linear workflow route from a TSV table. Paired step_en/step_zh, note_en/note_zh, and status_en/status_zh columns switch with the active report language; legacy step, flow, status, and outdir columns remain supported.",
+    "plot_card": "plot_card embeds a PNG/SVG/JPEG/WebP image as a data URI and supports a fit-to-window large-image viewer. layout supports grid, wide, and media; media adds a validated responsive image-and-explanation layout with controlled image position, ratio, alignment, and spacing.",
     "native_subreport": "native_subreport bundles a local program-generated HTML/QC report. embed_policy supports auto, always, and never; local multi-page bundles can use embed_linked_pages or pages.",
     "plot_collection": "plot_collection expands a TSV index into plot_card components. Use columns such as id, image/path/source, title_en, title_zh, note_en, and note_zh.",
     "table_collection": "table_collection expands a TSV index into table_preview components. Use columns such as id, source/path, title_en, title_zh, note_en, and note_zh.",
@@ -1378,10 +1383,48 @@ def validate_component_required_fields(component: dict[str, Any], location: str)
         value = component.get(field_name)
         if value is None or value == "":
             raise RenderError(f"{location}.{field_name} is required for {ctype}")
+    if ctype == "plot_card":
+        validate_plot_card_component(component, location)
     try:
         validate_extended_component(component, location)
     except ValueError as exc:
         raise RenderError(str(exc)) from exc
+
+
+def validate_plot_card_component(component: dict[str, Any], location: str) -> None:
+    layout = str(component.get("layout", "grid")).strip().lower()
+    if layout not in {"grid", "wide", "media"}:
+        raise RenderError(f"{location}.layout must be one of: grid, wide, media")
+
+    enum_fields = {
+        "image_position": ({"left", "right"}, "left"),
+        "media_vertical_align": ({"start", "center"}, "start"),
+        "media_gap": ({"compact", "normal", "relaxed"}, "normal"),
+    }
+    for field_name, (allowed, default) in enum_fields.items():
+        value = str(component.get(field_name, default)).strip().lower()
+        if value not in allowed:
+            choices = ", ".join(sorted(allowed))
+            raise RenderError(f"{location}.{field_name} must be one of: {choices}")
+
+    media_only_fields = {
+        "image_position",
+        "media_image_ratio",
+        "media_vertical_align",
+        "media_gap",
+    }
+    declared_media_fields = sorted(field for field in media_only_fields if field in component)
+    if layout != "media" and declared_media_fields:
+        fields = ", ".join(declared_media_fields)
+        raise RenderError(f"{location}: media-only fields require layout=media: {fields}")
+
+    if "media_image_ratio" in component:
+        value = component["media_image_ratio"]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise RenderError(f"{location}.media_image_ratio must be a finite number between 0.25 and 0.70")
+        ratio = float(value)
+        if not math.isfinite(ratio) or not 0.25 <= ratio <= 0.70:
+            raise RenderError(f"{location}.media_image_ratio must be a finite number between 0.25 and 0.70")
 
 
 def validate_spec(spec: dict[str, Any], allow_collections: bool = True) -> None:
@@ -1538,12 +1581,19 @@ def render_table(
     return f'<div class="{escape(wrap_class)}"><table class="{escape(table_class)}" data-table-ui><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
+def render_component_intro(component: dict[str, Any]) -> str:
+    note = component.get("note")
+    if not note:
+        return ""
+    return f'<div class="component-intro">{i18n(note)}</div>'
+
+
 def render_quality_gate_table(component: dict[str, Any], ctx: RenderContext) -> str:
     rel = component.get("source", "")
     path = resolve_path(ctx.root, rel)
     record_asset(ctx, "table", component["id"], rel, path)
     headers, rows = read_tsv(path)
-    return f'<div class="gate-table" id="{escape(component["id"])}">{render_table(headers, rows)}</div>'
+    return f'<div class="gate-table" id="{escape(component["id"])}">{render_component_intro(component)}{render_table(headers, rows)}</div>'
 
 
 def render_table_preview(component: dict[str, Any], ctx: RenderContext) -> str:
@@ -1664,6 +1714,7 @@ def render_table_preview(component: dict[str, Any], ctx: RenderContext) -> str:
         f'<span class="table-summary-badge">{badge}</span>'
         "</summary>"
         '<div class="table-card-body">'
+        f"{render_component_intro(component)}"
         f"{table_panel}"
         '<div class="table-preview-actions">'
         f"{toggle}"
@@ -1727,17 +1778,26 @@ def render_workflow(component: dict[str, Any], ctx: RenderContext) -> str:
     headers, rows = read_tsv(path)
     steps = []
     for idx, row in enumerate(rows, start=1):
-        name = row.get("flow") or row.get("step") or row.get(headers[0], f"step {idx}")
-        note = row.get("status") or row.get("outdir") or ""
+        fallback_name = row.get("flow") or row.get("step") or row.get(headers[0], f"step {idx}")
+        name = row_i18n(row, "step", fallback_name)
+        note = row_i18n(row, "note", row.get("outdir", ""))
+        status = row_i18n(row, "status", row.get("status", ""))
+        status_html = f'<span class="workflow-status">{i18n(status)}</span>' if any(status.values()) else ""
         steps.append(
             '<div class="workflow-step">'
             f'<span class="workflow-index">{idx}</span>'
-            f"<strong>{escape(name)}</strong>"
-            f"<p>{escape(note)}</p>"
+            f"<strong>{i18n(name)}</strong>"
+            f"{status_html}"
+            f"<p>{i18n(note)}</p>"
             "</div>"
         )
     joined = '<span class="workflow-connector" aria-hidden="true"></span>'.join(steps)
-    return f'<div class="workflow-row" id="{escape(component["id"])}">{joined}</div>'
+    return (
+        f'<div class="workflow-component" id="{escape(component["id"])}">'
+        f'{render_component_intro(component)}'
+        f'<div class="workflow-row">{joined}</div>'
+        '</div>'
+    )
 
 
 def render_plot_card(component: dict[str, Any], ctx: RenderContext) -> str:
@@ -1765,9 +1825,13 @@ def render_plot_card(component: dict[str, Any], ctx: RenderContext) -> str:
         else ""
     )
     raw_href = report_relative_href(ctx, path, rel)
-    return (
-        f'<figure class="plot-card" id="{escape(component["id"])}" data-image-fit="{escape(fit)}">'
-        f"{image_html}"
+    layout = str(component.get("layout", "grid")).strip().lower()
+    if layout not in {"grid", "wide", "media"}:
+        layout = "grid"
+    note_position = str(component.get("note_position", "bottom")).strip().lower()
+    if note_position not in {"top", "bottom"}:
+        note_position = "bottom"
+    caption_html = (
         "<figcaption>"
         f"<strong>{i18n(title)}</strong>"
         '<span class="plot-links">'
@@ -1775,7 +1839,52 @@ def render_plot_card(component: dict[str, Any], ctx: RenderContext) -> str:
         f'<a href="{escape(raw_href)}" target="_blank" rel="noopener">{label("Raw", "原始文件")}</a>'
         "</span>"
         "</figcaption>"
-        f'<p class="plot-note">{i18n(note)}</p>'
+    )
+    note_html = f'<div class="plot-note plot-note-{escape(note_position)}">{i18n(note)}</div>'
+    if layout == "media":
+        image_position = str(component.get("image_position", "left")).strip().lower()
+        vertical_align = str(component.get("media_vertical_align", "start")).strip().lower()
+        media_gap = str(component.get("media_gap", "normal")).strip().lower()
+        ratio = float(component.get("media_image_ratio", 0.42))
+        image_track = f"{ratio * 100:.6g}fr"
+        copy_track = f"{(1.0 - ratio) * 100:.6g}fr"
+        media_style = css_var_style({
+            "--media-image-track": image_track,
+            "--media-copy-track": copy_track,
+        })
+        caption = component.get("caption")
+        caption_detail = (
+            f'<div class="plot-media-caption">{i18n(caption)}</div>'
+            if caption and caption != note
+            else ""
+        )
+        media_caption_html = (
+            '<figcaption class="plot-media-copy">'
+            f'<strong>{i18n(title)}</strong>'
+            f'<span class="plot-links">{zoom_button}'
+            f'<a href="{escape(raw_href)}" target="_blank" rel="noopener">{label("Raw", "原始文件")}</a>'
+            '</span>'
+            f'{note_html}{caption_detail}'
+            '</figcaption>'
+        )
+        return (
+            f'<figure class="plot-card plot-card-media plot-media-image-{escape(image_position)} '
+            f'plot-media-align-{escape(vertical_align)} plot-media-gap-{escape(media_gap)}" '
+            f'id="{escape(component["id"])}" data-image-fit="{escape(fit)}" '
+            f'data-plot-layout="media" data-media-image-ratio="{ratio:.6g}" style="{media_style}">'
+            f'<div class="plot-media-image">{image_html}</div>'
+            f'{media_caption_html}'
+            '</figure>'
+        )
+    ordered_content = (
+        f"{caption_html}{note_html}{image_html}"
+        if note_position == "top"
+        else f"{image_html}{caption_html}{note_html}"
+    )
+    return (
+        f'<figure class="plot-card plot-card-{escape(layout)}" id="{escape(component["id"])}" '
+        f'data-image-fit="{escape(fit)}" data-plot-layout="{escape(layout)}">'
+        f"{ordered_content}"
         "</figure>"
     )
 
@@ -3456,8 +3565,14 @@ def render_section_components(section: dict[str, Any], ctx: RenderContext) -> st
         nonlocal group_kind, group_items
         if not group_items:
             return
-        if group_kind == "plot_card":
-            chunks.append('<div class="plot-grid">' + "\n".join(group_items) + "</div>")
+        if group_kind in {"plot_card", "plot_card_wide", "plot_card_media"}:
+            if group_kind == "plot_card_wide":
+                grid_class = "plot-grid plot-grid-wide"
+            elif group_kind == "plot_card_media":
+                grid_class = "plot-media-stack"
+            else:
+                grid_class = "plot-grid"
+            chunks.append(f'<div class="{grid_class}">' + "\n".join(group_items) + "</div>")
         elif group_kind == "native_subreport":
             chunks.append('<div class="subreport-open-grid" data-subreport-browser>' + "\n".join(group_items) + "</div>")
         else:
@@ -3469,9 +3584,16 @@ def render_section_components(section: dict[str, Any], ctx: RenderContext) -> st
         ctype = component.get("type")
         rendered = render_component(component, ctx)
         if ctype in {"plot_card", "native_subreport"}:
-            if group_kind != ctype:
+            component_layout = str(component.get("layout", "grid")).strip().lower()
+            if ctype == "plot_card" and component_layout == "wide":
+                desired_group = "plot_card_wide"
+            elif ctype == "plot_card" and component_layout == "media":
+                desired_group = "plot_card_media"
+            else:
+                desired_group = ctype
+            if group_kind != desired_group:
                 flush_group()
-                group_kind = ctype
+                group_kind = desired_group
             group_items.append(rendered)
         else:
             flush_group()
@@ -3960,6 +4082,9 @@ def report_json_schema() -> dict[str, Any]:
                 "color_ns",
                 "color_low",
                 "color_high",
+                "image_position",
+                "media_vertical_align",
+                "media_gap",
             }:
                 properties[field_name] = {"type": "string"}
             elif field_name in {"pages"}:
@@ -4013,10 +4138,19 @@ def report_json_schema() -> dict[str, Any]:
                 properties[field_name] = {"type": "integer", "minimum": 0}
             elif field_name in {"default_padj", "default_log2fc", "point_size", "opacity"}:
                 properties[field_name] = {"type": "number", "minimum": 0}
+            elif field_name == "media_image_ratio":
+                properties[field_name] = {"type": "number", "minimum": 0.25, "maximum": 0.70}
             elif field_name == "caption":
                 properties[field_name] = {"$ref": "#/$defs/i18nText"}
             else:
                 properties[field_name] = {}
+        if name == "plot_card":
+            properties["layout"] = {"type": "string", "enum": ["grid", "wide", "media"], "default": "grid"}
+            properties["default_fit"] = {"type": "string", "enum": ["contain", "original"], "default": "contain"}
+            properties["note_position"] = {"type": "string", "enum": ["top", "bottom"], "default": "bottom"}
+            properties["image_position"] = {"type": "string", "enum": ["left", "right"], "default": "left"}
+            properties["media_vertical_align"] = {"type": "string", "enum": ["start", "center"], "default": "start"}
+            properties["media_gap"] = {"type": "string", "enum": ["compact", "normal", "relaxed"], "default": "normal"}
         component_defs[name] = {
             "type": "object",
             "properties": properties,

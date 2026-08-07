@@ -344,6 +344,10 @@ source = "03_results/tables/standard.subflows.subflows.tsv"
 它适合展示标准路线，不适合复杂条件分支或交互式 DAG。若流程非常复杂，应先在 flow 侧输出
 清晰的 summary TSV。
 
+流程表可使用 `step_en` / `step_zh`、`note_en` / `note_zh` 和可选的
+`status_en` / `status_zh` 成对字段，渲染器会按当前报告语言显示；旧的 `step`、`flow`、
+`status`、`outdir` 字段仍然兼容。
+
 ## plot_card
 
 用途：展示主图片。图片会转成 data URI 内嵌到主 HTML。
@@ -357,6 +361,8 @@ id = "de-pca"
 image = "03_results/plots/de.pca_plot.png"
 zoom = true
 default_fit = "contain"  # contain | original
+layout = "wide"          # grid | wide | media
+note_position = "top"    # bottom | top
 title.zh = "PCA 图"
 title.en = "PCA plot"
 note.zh = "展示样本整体表达结构。"
@@ -370,7 +376,54 @@ note.en = "Shows global sample expression structure."
 - 用户可放大、缩小、回到适配窗口；
 - 图片仍然是内嵌 payload，不依赖外部文件；
 - 连续 `plot_card` 会自动形成图片网格；
+- `layout = "wide"` 可让主图独占一行，`note_position = "top"` 可把解释放到图片上方；
 - 不同类型组件不会混进 plot grid。
+
+### media 横向图文布局
+
+`layout = "media"` 用于文献图、背景图、概念模型、原理图和输入数据示意图。每张 media
+卡片独占一行，图片和对应解释在桌面端并排，在窄屏自动改成“图片在前、文字在后”的单栏。
+
+```toml
+[[sections.components]]
+type = "plot_card"
+id = "effector-concept-figure"
+image = "03_results/figures/effector-concept.png"
+layout = "media"
+image_position = "left"
+media_image_ratio = 0.42
+media_vertical_align = "start"
+media_gap = "normal"
+zoom = true
+default_fit = "contain"
+title.zh = "病原真菌侵染与效应子作用位置"
+title.en = "Fungal Infection and Effector Action Sites"
+note.zh = "图片与解释在宽屏中保持相邻。"
+note.en = "The figure and its interpretation remain adjacent on wide screens."
+```
+
+media 专用字段：
+
+- `image_position = "left" | "right"`：桌面端图片位于左侧或右侧，默认 `left`；
+- `media_image_ratio = 0.42`：图片栏占两栏可用空间的比例，默认 `0.42`，允许范围
+  `0.25–0.70`；renderer 会转换为安全 CSS Grid 比例，不接受任意 CSS 字符串；
+- `media_vertical_align = "start" | "center"`：两栏顶部或居中对齐，默认 `start`；
+- `media_gap = "compact" | "normal" | "relaxed"`：使用 renderer 固定间距等级，
+  默认 `normal`；
+- `title`、`note`、`caption`、`zoom` 和 `default_fit` 继续复用既有字段。
+
+响应式契约：
+
+- `820px` 以上使用 CSS Grid 两栏；每张 media 卡片独占一行，连续三张会纵向排列；
+- `820px` 及以下自动改为单栏，始终先显示图片，再显示标题、操作、说明和 caption；
+- 窄屏忽略桌面比例，不产生横向滚动；图片保持原始比例并使用 `object-fit: contain`；
+- 长中英文标题、长链接和连续英文标识符必须在文字栏内换行；
+- 未识别枚举、字符串/NaN/非有限比例、越界比例或在非 media 布局中声明 media 专用字段，
+  都会在验证/lint 阶段失败。
+
+坐标轴、标签和数据点密集的正式科学结果图仍建议使用 `layout = "wide"` 和
+`note_position = "top"`。renderer 不会自动把 `wide` 转成 `media`，历史 `grid`、`wide`
+和未声明 layout 的 TOML 行为保持不变。
 
 建议 flow 同时保留 PNG 和 PDF 原始文件；报告中通常用 PNG/SVG 作为主图，PDF 作为源文件或
 文件索引的一部分。

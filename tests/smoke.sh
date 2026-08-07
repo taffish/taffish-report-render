@@ -15,7 +15,7 @@ rm -rf "$render_root"
 mkdir -p "$render_root"
 
 echo "[SMOKE] version and components"
-"$renderer" --version | grep -F "0.1.0-r1" >/dev/null
+"$renderer" --version | grep -F "0.2.0-r1" >/dev/null
 "$renderer" components | grep -F "native_subreport" >/dev/null
 "$renderer" components | grep -F "code_file" >/dev/null
 "$renderer" components | grep -F "structure_viewer" >/dev/null
@@ -27,6 +27,8 @@ echo "[SMOKE] version and components"
 "$renderer" component-doc table_preview | grep -F "table_preview renders" >/dev/null
 "$renderer" component-doc structure_viewer | grep -F "structure_viewer embeds" >/dev/null
 "$renderer" component-doc interactive_plot | grep -F "interactive_plot embeds" >/dev/null
+"$renderer" component-doc plot_card | grep -F "layout supports grid, wide, and media" >/dev/null
+"$renderer" schema | grep -F '"media_image_ratio"' >/dev/null
 
 echo "[SMOKE] init stdout and demo workspace"
 "$renderer" init > "$render_root/report.template.toml"
@@ -103,6 +105,11 @@ cat > "$render_root/collection/04_reports/tables.tsv" <<'TSV'
 id	source	title_en	title_zh
 small	03_results/tables/small.tsv	Small table	小表格
 TSV
+cat > "$render_root/collection/04_reports/workflow.tsv" <<'TSV'
+step_en	step_zh	status_en	status_zh	note_en	note_zh
+Input control	输入控制	PASS	通过	Freeze the input identity	冻结输入身份
+Report	报告生成	PASS	通过	Render a standalone report	生成单文件报告
+TSV
 cat > "$render_root/collection/04_reports/html.tsv" <<'TSV'
 id	path	kind	title_en	title_zh
 html1	03_results/html/native.html	html	Native page	原生页面
@@ -164,6 +171,33 @@ type = "native_subreport_collection"
 id = "html"
 source = "04_reports/html.tsv"
 embed_policy = "auto"
+
+[[sections.components]]
+type = "workflow_diagram"
+id = "localized-workflow"
+source = "04_reports/workflow.tsv"
+note.en = "Localized workflow component explanation."
+note.zh = "双语流程组件说明。"
+
+[[sections.components]]
+type = "table_preview"
+id = "explained-table"
+source = "03_results/tables/small.tsv"
+preview_rows = 1
+embed_full = true
+note.en = "Column a is the record identifier; column b is its value."
+note.zh = "a 列是记录编号；b 列是对应数值。"
+
+[[sections.components]]
+type = "plot_card"
+id = "wide-top-plot"
+image = "03_results/plots/plot1.svg"
+layout = "wide"
+note_position = "top"
+title.en = "Wide plot"
+title.zh = "全宽图片"
+note.en = "The explanation is shown above the image."
+note.zh = "解释文字显示在图片上方。"
 TOML
 "$renderer" validate-spec --spec "$render_root/collection/report.toml" --root "$render_root/collection"
 "$renderer" lint --spec "$render_root/collection/report.toml" --root "$render_root/collection"
@@ -178,8 +212,227 @@ grep -F '"type": "native_subreport"' "$render_root/collection/expanded.json" >/d
   --force \
   --validate
 grep -F "plots-plot1" "$render_root/collection/04_reports/report.normalized.json" >/dev/null
+grep -F 'class="component-intro"' "$render_root/collection/04_reports/report.html" >/dev/null
+grep -F 'class="plot-grid plot-grid-wide"' "$render_root/collection/04_reports/report.html" >/dev/null
+grep -F 'plot-note-top' "$render_root/collection/04_reports/report.html" >/dev/null
+grep -F 'data-i18n-lang="zh">输入控制<' "$render_root/collection/04_reports/report.html" >/dev/null
+grep -F 'data-i18n-lang="en">Input control<' "$render_root/collection/04_reports/report.html" >/dev/null
 grep -F "tables-small" "$render_root/collection/04_reports/report.normalized.json" >/dev/null
 grep -F "html-html1" "$render_root/collection/04_reports/report.normalized.json" >/dev/null
+
+echo "[SMOKE] plot_card media layout"
+mkdir -p "$render_root/media/03_results/figures" "$render_root/media/04_reports"
+cat > "$render_root/media/03_results/figures/horizontal.svg" <<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240"><rect width="640" height="240" fill="#eef8f6"/><circle cx="150" cy="120" r="72" fill="#0b8f82"/><path d="M260 70h300v28H260zm0 58h220v28H260z" fill="#17343c"/></svg>
+SVG
+cat > "$render_root/media/03_results/figures/portrait.svg" <<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 520"><rect width="260" height="520" fill="#f8f4e8"/><path d="M40 450L130 60l90 390z" fill="#315b9b"/><circle cx="130" cy="255" r="42" fill="#d18b00"/></svg>
+SVG
+cat > "$render_root/media/03_results/figures/transparent.svg" <<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300"><g fill="none" stroke-width="18"><path d="M50 240C120 40 220 40 270 150s110 90 160-80" stroke="#0b8f82"/><circle cx="270" cy="150" r="62" stroke="#8b5cf6"/></g></svg>
+SVG
+cat > "$render_root/media/report.toml" <<'TOML'
+schema_version = "0.1"
+template = "taffish-flow-report"
+languages = ["en", "zh"]
+language_default = "zh"
+
+[project]
+flow_name = "media-layout-regression"
+flow_version = "0.2.0-r1"
+analysis_mode = "component-regression"
+title.en = "Media Layout Regression"
+title.zh = "媒体布局回归测试"
+
+[[sections]]
+id = "media"
+kind = "analysis"
+title.en = "Responsive media cards"
+title.zh = "响应式媒体卡"
+
+[[sections.components]]
+type = "plot_card"
+id = "media-default"
+image = "03_results/figures/horizontal.svg"
+layout = "media"
+title.en = "Default 0.42 image ratio"
+title.zh = "默认 0.42 图片比例"
+note.en = "The default media card keeps the figure next to its explanation."
+note.zh = "默认媒体卡让图片与解释保持相邻。"
+zoom = true
+default_fit = "contain"
+
+[[sections.components]]
+type = "plot_card"
+id = "media-ratio-030"
+image = "03_results/figures/portrait.svg"
+layout = "media"
+image_position = "right"
+media_image_ratio = 0.30
+media_vertical_align = "center"
+media_gap = "compact"
+title.en = "Portrait figure on the right"
+title.zh = "右侧竖版图片"
+note.en = "A portrait image uses a narrow image track and vertically centered alignment."
+note.zh = "竖版图片使用较窄图片栏，并在纵向居中对齐。"
+
+[[sections.components]]
+type = "plot_card"
+id = "media-ratio-050"
+image = "03_results/figures/transparent.svg"
+layout = "media"
+media_image_ratio = 0.50
+media_gap = "relaxed"
+title.en = "Transparent figure with a deliberately long explanatory title that must wrap inside the copy column"
+title.zh = "带有较长说明标题且必须在文字栏内安全换行的透明背景图片"
+note.en = "Long links and continuous strings must remain inside the card: https://taffish.github.io/reports/a/very/long/scientific/background/reference and ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ."
+note.zh = "长链接和连续字符串必须留在卡片内部：https://taffish.github.io/reports/a/very/long/scientific/background/reference。"
+caption.en = "Optional caption details appear after the main explanation."
+caption.zh = "可选 caption 细节显示在主要说明之后。"
+
+[[sections.components]]
+type = "plot_card"
+id = "media-ratio-070"
+image = "03_results/figures/horizontal.svg"
+layout = "media"
+image_position = "right"
+media_image_ratio = 0.70
+media_vertical_align = "start"
+media_gap = "normal"
+title.en = "Wide image track boundary"
+title.zh = "宽图片栏边界"
+note.en = "The maximum supported image ratio remains within the parent width."
+note.zh = "允许的最大图片比例仍保持在父容器宽度内。"
+
+[[sections.components]]
+type = "plot_card"
+id = "legacy-grid"
+image = "03_results/figures/horizontal.svg"
+layout = "grid"
+title.en = "Legacy grid card"
+title.zh = "历史 grid 卡片"
+
+[[sections.components]]
+type = "plot_card"
+id = "legacy-wide"
+image = "03_results/figures/horizontal.svg"
+layout = "wide"
+note_position = "top"
+title.en = "Legacy wide card"
+title.zh = "历史 wide 卡片"
+note.en = "The established wide layout remains unchanged."
+note.zh = "既有 wide 布局保持不变。"
+TOML
+"$renderer" validate-spec --spec "$render_root/media/report.toml" --root "$render_root/media"
+"$renderer" lint --spec "$render_root/media/report.toml" --root "$render_root/media" --strict --fail-on-warn
+"$renderer" render \
+  --spec "$render_root/media/report.toml" \
+  --root "$render_root/media" \
+  --out "$render_root/media/04_reports/report.html" \
+  --force \
+  --validate
+media_report="$render_root/media/04_reports/report.html"
+test "$(grep -o 'class="plot-media-stack"' "$media_report" | wc -l | tr -d ' ')" = "1"
+test "$(grep -o 'class="plot-card plot-card-media' "$media_report" | wc -l | tr -d ' ')" = "4"
+grep -F 'data-media-image-ratio="0.42"' "$media_report" >/dev/null
+grep -F 'data-media-image-ratio="0.3"' "$media_report" >/dev/null
+grep -F 'data-media-image-ratio="0.5"' "$media_report" >/dev/null
+grep -F 'data-media-image-ratio="0.7"' "$media_report" >/dev/null
+grep -F 'plot-media-image-right' "$media_report" >/dev/null
+grep -F 'plot-media-align-center' "$media_report" >/dev/null
+grep -F 'plot-media-gap-compact' "$media_report" >/dev/null
+grep -F 'plot-media-gap-relaxed' "$media_report" >/dev/null
+grep -F 'grid-template-areas: "image copy";' "$media_report" >/dev/null
+grep -F '@media (max-width: 820px)' "$media_report" >/dev/null
+grep -F 'grid-template-areas:' "$media_report" >/dev/null
+grep -F 'data-i18n-lang="en">Default 0.42 image ratio<' "$media_report" >/dev/null
+grep -F 'data-i18n-lang="zh">默认 0.42 图片比例<' "$media_report" >/dev/null
+grep -F 'data-open-image="media-default"' "$media_report" >/dev/null
+grep -F 'class="plot-grid"' "$media_report" >/dev/null
+grep -F 'class="plot-grid plot-grid-wide"' "$media_report" >/dev/null
+grep -F 'data:image/svg+xml;base64,' "$media_report" >/dev/null
+
+make_invalid_media_spec() {
+  local name="$1"
+  local assignment="$2"
+  local spec="$render_root/media/invalid-$name.toml"
+  cat > "$spec" <<TOML
+schema_version = "0.1"
+template = "taffish-flow-report"
+[project]
+title.en = "Invalid media"
+title.zh = "非法媒体参数"
+[[sections]]
+id = "invalid"
+title.en = "Invalid"
+title.zh = "非法"
+[[sections.components]]
+type = "plot_card"
+id = "invalid-$name"
+image = "03_results/figures/horizontal.svg"
+layout = "media"
+$assignment
+TOML
+  if "$renderer" lint --spec "$spec" --root "$render_root/media" > "$render_root/media/invalid-$name.log" 2>&1; then
+    echo "expected media lint failure: $name" >&2
+    exit 1
+  fi
+  grep -F "ERROR" "$render_root/media/invalid-$name.log" >/dev/null
+}
+
+make_invalid_media_spec "ratio-low" "media_image_ratio = 0.24"
+make_invalid_media_spec "ratio-high" "media_image_ratio = 0.71"
+make_invalid_media_spec "ratio-nan" "media_image_ratio = nan"
+make_invalid_media_spec "ratio-inf" "media_image_ratio = inf"
+make_invalid_media_spec "ratio-string" 'media_image_ratio = "0.42"'
+make_invalid_media_spec "position" 'image_position = "middle"'
+make_invalid_media_spec "vertical-align" 'media_vertical_align = "end"'
+make_invalid_media_spec "gap" 'media_gap = "wide"'
+
+cat > "$render_root/media/invalid-layout.toml" <<'TOML'
+schema_version = "0.1"
+template = "taffish-flow-report"
+[project]
+title.en = "Invalid layout"
+title.zh = "非法布局"
+[[sections]]
+id = "invalid"
+title.en = "Invalid"
+title.zh = "非法"
+[[sections.components]]
+type = "plot_card"
+id = "invalid-layout"
+image = "03_results/figures/horizontal.svg"
+layout = "side-by-side"
+TOML
+if "$renderer" lint --spec "$render_root/media/invalid-layout.toml" --root "$render_root/media" > "$render_root/media/invalid-layout.log" 2>&1; then
+  echo "expected unknown plot_card layout lint failure" >&2
+  exit 1
+fi
+grep -F "layout must be one of: grid, wide, media" "$render_root/media/invalid-layout.log" >/dev/null
+
+cat > "$render_root/media/invalid-media-field-on-grid.toml" <<'TOML'
+schema_version = "0.1"
+template = "taffish-flow-report"
+[project]
+title.en = "Invalid grid"
+title.zh = "非法 grid"
+[[sections]]
+id = "invalid"
+title.en = "Invalid"
+title.zh = "非法"
+[[sections.components]]
+type = "plot_card"
+id = "invalid-grid"
+image = "03_results/figures/horizontal.svg"
+layout = "grid"
+media_image_ratio = 0.42
+TOML
+if "$renderer" lint --spec "$render_root/media/invalid-media-field-on-grid.toml" --root "$render_root/media" > "$render_root/media/invalid-media-field-on-grid.log" 2>&1; then
+  echo "expected media-only field lint failure on grid layout" >&2
+  exit 1
+fi
+grep -F "media-only fields require layout=media" "$render_root/media/invalid-media-field-on-grid.log" >/dev/null
 
 echo "[SMOKE] manifest-declared multilingual shell"
 mkdir -p "$render_root/multilang/03_results" "$render_root/multilang/04_reports"
@@ -532,7 +785,7 @@ language_default = "zh"
 
 [project]
 flow_name = "bio-viewer-smoke"
-flow_version = "0.1.0-r1"
+flow_version = "0.2.0-r1"
 analysis_mode = "bio-viewers"
 title.zh = "生信浏览器组件测试"
 title.en = "Bio Viewer Component Smoke"

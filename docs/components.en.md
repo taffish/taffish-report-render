@@ -86,6 +86,7 @@ Common fields:
 - `max_rows`: maximum embedded rows; use carefully for huge matrices.
 - `fold_i18n_columns`: whether to fold `*_en` / `*_zh` language pairs.
 - `allow_full_table`: whether the report can expand the full embedded table.
+- `note`: localized interpretation text displayed above the table.
 
 Behavior:
 
@@ -115,8 +116,10 @@ Render a structured workflow diagram from nodes declared in TOML.
 
 Common fields:
 
-- `nodes`: ordered node list.
-- each node can contain localized title, description, group, and status.
+- `source`: TSV file containing ordered workflow rows.
+- paired `step_en` / `step_zh`, `note_en` / `note_zh`, and optional
+  `status_en` / `status_zh` columns are rendered in the active report language.
+- legacy `step`, `flow`, `status`, and `outdir` columns remain supported.
 
 Use this for high-level report route diagrams, not for arbitrary SVG drawing.
 
@@ -126,17 +129,62 @@ Render an embedded image card.
 
 Common fields:
 
-- `image`: PNG/JPEG/SVG path under `--root`.
+- `image`: PNG/JPEG/WebP/SVG path under `--root`.
 - `title`: localized title.
+- `note`: localized interpretation or explanation.
 - `caption`: localized caption.
-- `source_label`: optional data provenance label.
+- `layout`: `grid` (default), `wide`, or `media`.
+- `note_position`: `bottom` (default) or `top` for `grid`/`wide`.
+- `image_position`: `left` (default) or `right` for `media`.
+- `media_image_ratio`: image-column share for `media`; default `0.42`, valid
+  range `0.25` through `0.70`.
+- `media_vertical_align`: `start` (default) or `center`.
+- `media_gap`: `compact`, `normal` (default), or `relaxed`.
+- `zoom`: enable the large-image viewer; default `true`.
+- `default_fit`: `contain` (default) or `original` in the viewer.
 
 Behavior:
 
 - images are embedded as data URIs when allowed;
 - clicking opens a fit-to-window lightbox;
 - modal scroll/zoom should not scroll the underlying page;
-- the original file can be opened when the report preserves a source link.
+- the original file can be opened when the report preserves a source link;
+- each `media` card owns one row and is never merged into the ordinary plot
+  grid;
+- desktop `media` cards use validated CSS Grid tracks; the ratio is interpreted
+  within the two-column space and does not include the predefined gap;
+- at `820px` and below, `media` becomes one column with the image first even
+  when `image_position = "right"`;
+- long titles, links, and uninterrupted identifiers wrap inside the copy
+  column; images retain their full aspect ratio with `object-fit: contain`;
+- PNG, JPEG, WebP, and SVG use the same embedding and lightbox behavior.
+
+Example:
+
+```toml
+[[sections.components]]
+type = "plot_card"
+id = "effector-concept-figure"
+image = "03_results/figures/effector-concept.png"
+layout = "media"
+image_position = "left"
+media_image_ratio = 0.42
+media_vertical_align = "start"
+media_gap = "normal"
+zoom = true
+default_fit = "contain"
+title.en = "Fungal infection and effector action sites"
+title.zh = "病原真菌侵染与效应子作用位置"
+note.en = "The figure and its interpretation remain adjacent on wide screens."
+note.zh = "图片与解释在宽屏中保持相邻。"
+```
+
+Use `media` for literature figures, conceptual models, background diagrams, or
+simple input schematics with substantial explanatory text. Keep dense
+axis-heavy scientific results in `layout = "wide"` with
+`note_position = "top"`. The renderer never converts `wide` into `media`
+automatically. Media-only fields on other layouts and unknown or out-of-range
+values fail validation; arbitrary CSS strings are not accepted.
 
 ### `plot_collection`
 
