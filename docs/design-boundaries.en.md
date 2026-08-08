@@ -36,6 +36,11 @@ external JavaScript, or hand-written HTML fragments.
 If a report needs new behavior, add a fixed renderer component with a documented
 TOML contract.
 
+Structured explanations follow the same boundary. `note_items` accepts only
+fixed kinds, localized labels, escaped plain-text paragraphs, and equal-length
+localized lists. It is not a Markdown, HTML, CSS, class/style/event,
+JavaScript, or URL-behavior escape hatch.
+
 ## Standalone HTML
 
 The final report should be readable as one HTML file. Sidecars are retained for
@@ -66,6 +71,18 @@ TAFFISH report.
 the tool CLI plus TOML/JSON specs only. It must not hand-write, copy, or patch
 final HTML. Generated outputs are local regression artifacts and are ignored by
 Git.
+
+Responsive validation applies to the entire shell: hero, sidebar, nested
+navigation, language controls, section headings, structured notes, card
+headers, badges, action rows, workflow, tables, code, alignments, and viewers.
+Page-level horizontal overflow is a failure. Intentional internal scrolling for
+tables, code, alignments, and viewer surfaces must remain available; do not hide
+defects with global overflow clipping.
+
+The fixed visual matrix covers `1600x1000`, `1280x800`, the `821px`/`820px`
+media boundary, `390x844`, both languages, 200% zoom, and print/PDF. Media cards
+remain two-column at `821px` and fold image-first at `820px`; structured-note
+label/body rows fold at `680px`.
 
 ## Repository Boundary
 

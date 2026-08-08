@@ -190,6 +190,21 @@
 - [ ] 每次 render 都输出 `report.manifest.json`、原始配置副本 `report.spec.toml`
       或 `report.spec.json`，以及 normalized `report.normalized.json`。
 - [ ] 编译器诊断尽量包含 fixture 名称、section ID、component ID 和字段路径。
+- [ ] section 和全部 fixed/collection component 都接受有序 `note_items`；旧 `note` 仍可单独
+      使用或作为结构化说明前的短导语。
+- [ ] `note_items.kind` 只接受 `summary`、`question`、`purpose`、`input`、`method`、
+      `elements`、`reading`、`observation`、`result`、`meaning`、`boundary`、
+      `limitation`、`next`、`provenance`；每项只允许 `kind`、`label`、`body`、`items`。
+- [ ] 每项至少有 `body` 或 `items`；所有报告语言都有非空 `label`，已提供的 `body` / `items`
+      也覆盖全部语言；`items` 是非空纯字符串数组且各语言条数一致。
+- [ ] 未知 kind/字段、缺语言、空 body/list item、非数组 items 和双语列表条数不一致都硬失败，
+      并给出 section/component 与字段路径。
+- [ ] 结构化说明只渲染转义后的语义 `dl`/`dt`/`dd`、`p`、`ul`/`li`；恶意 HTML、
+      Markdown、CSS、JS、class/style/event/URL 控制内容只能按普通文本显示。
+- [ ] normalize、JSON/TOML migrate、collection 展开、spec/full 与
+      `report.normalized.json` 无损保留 `note_items` 的顺序、正文和列表；`explain` 报告条数与 kinds。
+- [ ] `lint` 对异常长且无 `note_items` 的旧式中英文 `note` 给出本地化、可定位 warning；
+      已结构化说明不产生该 warning。
 
 ## 3. 固定组件注册表检查
 
@@ -289,6 +304,14 @@
       操作按钮默认贴近卡片左下角；按钮不得因为路径长短、表格行数或模型数量漂移到中间或右侧。
 - [ ] 窄视口下移动端布局仍可阅读。
 - [ ] print/PDF 样式在可行时避免把主要 card 生硬切开。
+- [ ] 响应式压力 fixture 覆盖 300–600 字中文、1000–1500 字英文、六条双语列表、SHA64、
+      accession/run ID、URL-like 与无空格长串，以及 numbered section/component、
+      wide/media/table/workflow/technical appendix。
+- [ ] 固定视口矩阵覆盖 `1600x1000`、`1280x800`、`821px`、`820px` 和 `390x844`，并逐项
+      检查 zh/en、200% 缩放和 print/PDF；`821px` media 保持双栏，`820px` 及以下图片在前。
+- [ ] hero、sidebar/nav、language switch、section head、structured note、card header、badge、
+      action row、workflow、plot/table/code/viewer 都不存在页面级横向溢出；table/code/
+      alignment/viewer 的有意内部滚动仍可达，不能用全局 overflow 裁切掩盖。
 
 ## 7. 真实报告回归矩阵
 
@@ -316,6 +339,8 @@
       的 `layout="media"`，包含左右图片、`0.30/0.42/0.50/0.70` 比例、start/center、
       compact/normal/relaxed、长中英文说明、连续三张以上 media 卡片和
       media/grid/wide 混排。
+- [ ] `component-structured-notes-report` 覆盖长双语段落/列表、固定 kinds、恶意文本转义、
+      migrate/normalized/explain 保留，以及 wide/media/table/workflow/appendix 响应式压力路径。
 - [ ] 生成的 fixture 报告在视觉和能力上不低于复制来的 baseline 或来源路径中记录的现有报告。
 - [ ] 记录回归输出体量；接近 GitHub 50 MB 建议线的报告需要显式 review。
 

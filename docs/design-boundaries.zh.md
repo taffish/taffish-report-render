@@ -25,6 +25,10 @@ raw HTML 会让报告能力重新分叉：
 因此 publish-ready 报告应由固定组件构建。若某个新展示需求确实无法表达，应先把它抽象成
 新的稳定组件，并补 fixture、文档和 checklist，而不是在某个 flow 中开 raw HTML 后门。
 
+结构化说明同样遵守这条边界。`note_items` 只接收固定 kind、双语 label、纯文本 paragraph
+和等长双语列表；renderer 负责转义和语义化 DOM。它不是 Markdown、HTML 或样式注入口，
+也不允许报告自行声明 class、style、event、JavaScript 或 URL 行为。
+
 ## Standalone HTML 规则
 
 最终报告的主 HTML 应尽量做到：
@@ -83,6 +87,15 @@ renderer 的目标是“打包真实页面”，不是重写一个看起来相�
 - 动态 viewer 与静态图并排时各自按内容高度对齐，不互相拉伸出大空白。
 
 如果一个布局问题能在 renderer 层普适解决，就不应通过某个 flow 的 spec 临时规避。
+
+响应式治理必须覆盖整个 shell，而不只是正文图片。hero、sidebar、目录层级、语言切换、
+section 标题、结构化说明、card header、badge、action row、workflow、宽表、代码区和 viewer
+都要显式处理 `min-width: 0`、最大内联尺寸和长字符串换行。页面级横向溢出视为失败；表格、
+代码、比对和 viewer 的有意内部滚动仍应保留，不能用全局 `overflow: hidden` 掩盖问题。
+
+固定视觉矩阵至少覆盖 `1600x1000`、`1280x800`、`821px`、`820px`、`390x844`，中英文、
+200% 缩放和 print/PDF。`820px` 是 media 卡片折叠边界：`821px` 保持双栏，`820px` 及以下
+图片在前、说明在后；结构化说明标签/正文在 `680px` 及以下折为单列。
 
 ## 多语言策略
 

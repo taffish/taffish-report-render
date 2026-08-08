@@ -3,6 +3,8 @@
 .DS_Store
 __pycache__
 *.py[cod]
+**/__pycache__
+**/*.py[cod]
 .taf-*
 target
 tests/rendered
@@ -11,4 +13,3 @@ tests/test-real-run-out
 testdata/fixtures
 testdata/runtime
 testdata/rendered
-

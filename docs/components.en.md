@@ -19,10 +19,28 @@ Every component has:
 - `id`: stable unique ID within the report;
 - `type`: registered component type;
 - optional localized `title`, `text`, `caption`, or similar visible labels.
+- ordered `note_items`, using the shared strict, localized, plain-text contract
+  documented in [the report spec](report-spec.en.md#structured-explanations-with-note_items).
 
 All asset paths are relative to `--root`. Components must not require extra
 configuration files outside TOML/JSON. Browser runtimes are packaged by the
 tool and are embedded only when the component requests them.
+
+Use this shared field instead of component-specific question/reading fields,
+HTML callouts, or custom CSS:
+
+```toml
+[[sections.components.note_items]]
+kind = "reading"
+label.en = "How to read"
+label.zh = "如何阅读"
+body.en = "Check the legend first, then map each item to the source table."
+body.zh = "先核对图例，再与源表逐项对应。"
+```
+
+Collection components copy their ordered `note_items` into every expanded
+fixed component and normalized JSON. The renderer still owns layout, wrapping,
+and responsive behavior.
 
 ## Overview Components
 

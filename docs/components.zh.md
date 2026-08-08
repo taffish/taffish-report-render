@@ -8,9 +8,26 @@ flow 作者只能用这些固定元素组织报告，不能临场手写 raw HTML
 - `type` 必须是已注册组件名；
 - `id` 必须稳定且唯一；
 - `title.<lang>` 和 `note.<lang>` 推荐提供中英双语；
+- section 与每个固定组件都支持有序 `note_items`；其 kind、字段、语言完整性和纯文本边界
+  统一按 [Report Spec 结构](report-spec.zh.md#结构化说明-note_items) 校验；
 - 路径字段相对 `--root`；
 - 组件只展示已有结果，不运行分析；
 - 长路径、长 ID、长表格值必须由组件安全换行或提供完整值访问方式。
+
+`note_items` 是共享字段，不需要每个组件各自发明 `question_en`、`reading_zh`、HTML callout
+或私有 CSS。例如：
+
+```toml
+[[sections.components.note_items]]
+kind = "reading"
+label.zh = "如何阅读"
+label.en = "How to read"
+body.zh = "先核对图例，再与源表逐项对应。"
+body.en = "Check the legend first, then map each item to the source table."
+```
+
+collection 组件上的 `note_items` 会按原顺序复制到每个展开后的固定组件，并进入 normalized
+JSON；最终布局与换行仍由 renderer 统一控制。
 
 ## dashboard_cards
 

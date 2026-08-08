@@ -1,4 +1,4 @@
-taffish-report-render 0.2.0-r1
+taffish-report-render 0.3.0-r1
 
 Usage:
   taf-taffish-report-render COMMAND [OPTIONS]
@@ -54,6 +54,11 @@ Common components:
 Plot layouts:
   plot_card supports grid, wide, and responsive media layouts.
   See the component manual for validated media ratios and alignment fields.
+
+Structured notes:
+  Sections and every fixed component support note_items with validated kinds,
+  bilingual labels, paragraphs, and plain-text lists. Markdown, HTML, CSS, and
+  JavaScript are not parsed from report specs.
 
 Path rule:
   All source/image/path values are relative to --root.

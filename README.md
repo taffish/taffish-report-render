@@ -16,6 +16,16 @@ Core model:
 report.toml or report.manifest.json + local result root -> standalone HTML report
 ```
 
+Package identity:
+
+- name: `taffish-report-render`
+- command: `taf-taffish-report-render`
+- TAFFISH version: `0.3.0-r1`
+- kind: `tool`
+- image candidate: `ghcr.io/taffish/taffish-report-render:0.3.0-r1`
+- runtime identity: `taffish-report-render 0.3.0-r1`
+- native platforms: `linux/amd64`, `linux/arm64`
+
 The report spec is the only structural configuration input. Users do not write
 custom HTML, JavaScript, CSS, or per-report code. The result root provides data
 assets such as tables, plots, PDB files, Newick trees, alignments, text files,
@@ -167,6 +177,28 @@ table. `workflow_diagram` supports paired `step_en` / `step_zh`, `note_en` /
 historical `grid` and `wide` layouts plus a responsive `media` layout for a
 side-by-side figure and explanation. Media cards use validated ratios and
 renderer-defined spacing; report specs never inject arbitrary CSS.
+
+For long reports, author visible hierarchical numbers in localized titles,
+such as `0. Project Overview`, `2. Results`, and `2.1 Headline Evidence`.
+Use the same number in every language, while keeping section and component IDs
+semantic, stable, and unnumbered. The renderer preserves title order and text;
+it does not auto-number reports. See the report-spec manual for the full
+reader-first structure and numbering rules.
+
+Sections and every fixed component also support ordered `note_items`. A short
+localized `note` can remain as a lead, while structured items express questions,
+inputs, methods, elements, reading guidance, observations, meaning, boundaries,
+limitations, next actions, and provenance. Each item is strictly typed and
+localized. Paragraphs and real plain-text lists render as escaped semantic HTML;
+Markdown, raw HTML, classes, style, script, URLs, and event attributes are not
+accepted as item fields.
+
+The shared shell uses component-aware responsive containment rather than global
+content clipping. Long titles, run IDs, SHA-256 values, labels, notes, and action
+rows wrap inside their owners. Tables, code blocks, alignments, and viewer
+surfaces keep intentional internal scrolling. Media plots fold at `820px`,
+structured label/body rows fold at `680px`, and narrow navigation becomes a
+single readable column.
 
 Use `taf-taffish-report-render component-doc COMPONENT` for concise CLI field
 documentation, or read the full

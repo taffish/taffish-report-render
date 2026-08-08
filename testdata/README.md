@@ -93,15 +93,17 @@ rnaseq-denovo
 chengdu-yuanda-report12
 ```
 
-第二组是真实报告风格的组件回归报告，每个报告用小而真实的领域数据验证一种 runtime 或组件接口：
+第二组是 7 个真实报告风格的组件回归报告，每个报告用小而真实的领域数据验证一种 runtime
+或组件接口：
 
 ```text
 component-basic-report
+component-media-layout-report
+component-structured-notes-report
 component-echarts-report
 component-tree-alignment-report
 component-igv-report
 component-ngl-native-report
-component-media-layout-report
 ```
 
 这些组件回归场景不是 demo。即使数据量很小，也必须有真实生信语义、真实 runtime、
@@ -111,6 +113,9 @@ component-media-layout-report
 `component-media-layout-report` 使用真实系统发育树、RNA-seq 热图和蛋白结构置信度图片，
 覆盖横图、竖图、透明背景图、左右换位、`0.30/0.42/0.50/0.70` 比例、顶部/居中对齐、
 三种预定义间距、长中英文说明、连续 media 卡片以及 media/grid/wide 混排。
+`component-structured-notes-report` 使用长双语科研叙述、六项双语列表、SHA-256、accession、
+run ID、URL 样式与无空格长串，覆盖全部 14 种固定 `note_items.kind`、恶意文本转义、
+normalize/migrate/explain 保留，以及 wide/media/table/workflow/技术附录的响应式和打印边界。
 默认 full real-run 会在渲染前预检本轮选中场景需要的全部浏览器 runtime；如果 NGL 和
 IGV 同时缺失，脚本应同时报告这两个真实 runtime 缺口，不能只在第一个缺口处停止而让
 后续组件没有被检查。
@@ -190,6 +195,10 @@ tests/test-real-run-out/component-regression/rendered_reports.tsv
 - `component-basic-report` 使用真实报告风格的 summary、status、quality gate、长表格、
   SVG 图、文本和 native HTML，覆盖基础组件、语言列折叠、图片 lightbox、表格原地展开和
   子报告 payload。
+- `component-media-layout-report` 使用真实系统发育树、RNA-seq 热图和蛋白结构置信度图片，
+  覆盖 media/grid/wide 混排、固定比例、左右位置、长双语说明及 820/821 px 折叠边界。
+- `component-structured-notes-report` 覆盖全部 14 种固定说明 kind、长双语段落与列表、
+  恶意文本安全转义、TOML/JSON 往返保留、collection 展开和页面级响应式溢出治理。
 - `component-echarts-report` 使用真实表达/富集结果语境的 DE、PCA 和 ORA 表，覆盖
   volcano、MA、PCA、ORA dotplot 四类 ECharts 交互图以及控件布局。
 - `component-tree-alignment-report` 使用系统发育语境的 Newick 和 FASTA，覆盖

@@ -34,6 +34,36 @@ body {
   line-height: 1.6;
 }
 
+img,
+svg,
+canvas,
+video {
+  max-width: 100%;
+}
+
+.report-shell,
+.report-sidebar,
+.report-main,
+.hero,
+.section,
+.section-head,
+.report-footer {
+  min-width: 0;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+.lead,
+.section-head p,
+.brand-link,
+.sidebar-external,
+.report-footer {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
 .report-shell {
   max-width: 1540px;
   margin: 0 auto;
@@ -107,6 +137,7 @@ body {
 
 .language-switch {
   display: inline-flex;
+  flex-wrap: wrap;
   align-self: flex-start;
   width: fit-content;
   max-width: 100%;
@@ -612,6 +643,8 @@ h3 {
 }
 
 .section > .dashboard-grid,
+.section > .dashboard-component,
+.section > .status-component,
 .section > .workflow-row,
 .section > .status-grid,
 .section > .insight-grid,
@@ -818,7 +851,7 @@ h3 {
 .workflow-connector::after {
   content: "";
   position: absolute;
-  right: 0;
+  right: 3px;
   top: 50%;
   width: 8px;
   height: 8px;
@@ -960,8 +993,10 @@ h3 {
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
-  white-space: nowrap;
-  min-width: max-content;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .plot-zoom-link,
@@ -1071,6 +1106,10 @@ h3 {
 }
 
 .component-intro {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-width: min(100%, 96ch);
   border-left: 4px solid var(--teal);
   border-radius: 4px;
   background: #f3f9f8;
@@ -1078,6 +1117,130 @@ h3 {
   line-height: 1.75;
   padding: 12px 14px;
   overflow-wrap: anywhere;
+}
+
+.component-intro .structured-note-lead,
+.component-note-block .structured-note-lead,
+.section-note-block .structured-note-lead {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.section-note-block,
+.component-note-block {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-width: min(100%, 96ch);
+}
+
+.section-note-block {
+  color: var(--muted);
+}
+
+.structured-note {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-width: min(100%, 96ch);
+  margin: 0;
+}
+
+.structured-note-item {
+  --structured-note-accent: var(--teal);
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) minmax(0, 1fr);
+  gap: 10px 14px;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--structured-note-accent);
+  border-radius: 7px;
+  background: #fff;
+  padding: 11px 13px;
+}
+
+.structured-note-kind-question,
+.structured-note-kind-reading,
+.structured-note-kind-provenance {
+  --structured-note-accent: var(--blue);
+}
+
+.structured-note-kind-observation,
+.structured-note-kind-result,
+.structured-note-kind-meaning {
+  --structured-note-accent: var(--teal);
+}
+
+.structured-note-kind-boundary,
+.structured-note-kind-limitation {
+  --structured-note-accent: var(--gold);
+  background: #fffaf0;
+}
+
+.structured-note-kind-next {
+  --structured-note-accent: #6d4fc2;
+}
+
+.structured-note-item dt,
+.structured-note-item dd,
+.structured-note-item p,
+.structured-note-item ul,
+.structured-note-item li {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.structured-note-item dt {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 850;
+}
+
+.structured-note-item dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.structured-note-kind-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--structured-note-accent) 14%, white);
+  color: var(--structured-note-accent);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.structured-note-label {
+  padding-top: 1px;
+}
+
+.structured-note-body {
+  margin: 0;
+}
+
+.structured-note-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.structured-note-body + .structured-note-list {
+  margin-top: 8px;
+}
+
+.structured-note-list li + li {
+  margin-top: 5px;
 }
 
 .subreport-open-grid {
@@ -3034,6 +3197,92 @@ code {
   font-size: 13px;
 }
 
+.hero > *,
+.section > *,
+.brand-link > *,
+.meta-grid > *,
+.dashboard-grid > *,
+.status-grid > *,
+.insight-grid > *,
+.file-category-grid > *,
+.method-grid > *,
+.glossary-grid > *,
+.plot-grid > *,
+.plot-media-stack > *,
+.subreport-open-grid > *,
+.executive-grid > *,
+.interactive-plot-head > *,
+.interactive-plot-layout > *,
+.structure-head > *,
+.structure-layout > *,
+.tree-viewer-head > *,
+.alignment-head > *,
+.genome-browser-head > *,
+.genome-browser-layout > *,
+.code-file-head > *,
+.table-card > summary > *,
+.table-toolbar > *,
+.modal-toolbar > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.plot-links,
+.pill-row,
+.table-preview-actions,
+.table-toolbar,
+.table-scroll-controls,
+.table-scroll-buttons,
+.interactive-plot-actions,
+.structure-toolbar,
+.tree-actions,
+.alignment-actions,
+.genome-browser-head-actions,
+.subreport-actions,
+.modal-actions {
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.plot-links a,
+.plot-links button,
+.table-preview-actions a,
+.table-preview-actions button,
+.tree-actions a,
+.tree-actions button,
+.alignment-actions a,
+.alignment-actions button,
+.subreport-actions a,
+.structure-toolbar button,
+.modal-actions button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.meta-value,
+.section-nav a,
+.nav-group summary,
+.dashboard-card,
+.status-card,
+.workflow-step,
+.component-intro,
+.plot-card,
+.table-summary-main,
+.table-card-body,
+.code-file-card,
+.interactive-plot-card,
+.subreport-card,
+.structure-card,
+.tree-viewer-card,
+.alignment-card,
+.genome-browser-card,
+.genome-browser-locus,
+.genome-track-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
 @media (max-width: 980px) {
   .report-shell {
     display: block;
@@ -3122,6 +3371,76 @@ code {
   }
 }
 
+@media (max-width: 680px) {
+  .hero,
+  .section {
+    padding: 17px;
+  }
+
+  .report-sidebar {
+    padding: 17px;
+  }
+
+  .meta-grid,
+  .metric-grid,
+  .card-grid,
+  .dashboard-grid,
+  .status-grid,
+  .insight-grid,
+  .file-category-grid,
+  .method-grid,
+  .glossary-grid,
+  .plot-grid,
+  .subreport-open-grid,
+  .section-nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .structured-note-item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .plot-card figcaption,
+  .interactive-plot-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .table-card > summary,
+  .code-file-head,
+  .structure-head,
+  .tree-viewer-head,
+  .alignment-head,
+  .genome-browser-head,
+  .subreport-card-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .genome-browser-head-actions {
+    justify-items: start;
+  }
+
+  .table-summary-badge,
+  .interactive-plot-badge,
+  .structure-runtime-badge,
+  .tree-runtime-badge,
+  .alignment-runtime-badge,
+  .genome-runtime-badge {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .language-switch {
+    width: 100%;
+  }
+
+  .language-switch button {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
 @media print {
   html {
     scroll-behavior: auto;
@@ -3162,6 +3481,7 @@ code {
   }
 
   .plot-card,
+  .structured-note-item,
   .table-wrap,
   .executive-card,
   .module-status-panel,
@@ -3172,6 +3492,15 @@ code {
   .glossary-card {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .structured-note,
+  .structured-note-item,
+  .structured-note-item dd,
+  .structured-note-item p,
+  .structured-note-item li {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .plot-links,

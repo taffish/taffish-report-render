@@ -34,8 +34,8 @@ subtitle.zh = "由 TOML 生成的 TAFFISH 单文件报告。"
 id = "overview"
 kicker.en = "Overview"
 kicker.zh = "总览"
-title.en = "Project Overview"
-title.zh = "项目总览"
+title.en = "0. Project Overview"
+title.zh = "0. 项目总览"
 text.en = "Start with the status cards and main outputs."
 text.zh = "先查看状态卡和主要输出。"
 
@@ -95,6 +95,90 @@ Recommended section fields:
 
 Section order in TOML is the order in the report. Component order inside a
 section is also preserved.
+
+### Visible Chapter Numbers And Stable IDs
+
+Long formal reports should explicitly number visible major and minor titles so
+navigation, meetings, and review comments can refer to stable reading units:
+
+```toml
+[[sections]]
+id = "input_quality"
+title.en = "1. Input Data Quality"
+title.zh = "1. 输入数据质量"
+
+[[sections.components]]
+type = "dashboard_cards"
+id = "input_quality_headline"
+title.en = "1.1 Input Scale and Headline Quality Results"
+title.zh = "1.1 输入规模与关键质量结果"
+source = "04_reports/input_quality_cards.tsv"
+```
+
+Use `0.` for an overview or reading entry, `1.` / `2.` for main chapters, and
+`1.1` / `1.2` for components. An independent appendix may use `A.` / `A.1`,
+or continue the numeric sequence, but one report should use one convention.
+Every localized title uses the same visible number. Numbers are written in
+`title.<lang>`; the renderer does not auto-number reports.
+
+Keep section and component IDs semantic, stable, and unnumbered. Reordering may
+change a visible number without changing anchors, asset paths, or provenance.
+Internal module codes, attempt IDs, run IDs, and directory prefixes belong in
+provenance rather than reader-facing chapter titles.
+
+A major result section should state its question, inputs, completed work,
+outputs, reading criteria, current observation, and claim boundary. Formal
+figure and table notes should cover purpose, source, elements or fields,
+interpretation criteria, the current result, and what cannot be inferred.
+
+### Structured explanations with `note_items`
+
+`note` remains a backward-compatible short lead. Formal reports that need
+separable reading units should add ordered `note_items` to a section or any
+fixed component. The renderer preserves their order and emits escaped semantic
+`dl` / `dt` / `dd`, `p`, and `ul` / `li` markup:
+
+```toml
+note.en = "Read the question and boundary before the figures."
+note.zh = "先读问题与边界，再看图表。"
+
+[[sections.note_items]]
+kind = "question"
+label.en = "Question"
+label.zh = "问题"
+body.en = "Do genomic compartments show reproducible structural differences?"
+body.zh = "基因组区域之间是否存在可重复的结构差异？"
+
+[[sections.note_items]]
+kind = "reading"
+label.en = "How to read"
+label.zh = "如何阅读"
+items.en = ["Check inputs and quality gates first.", "Interpret the figure with its source table."]
+items.zh = ["先核对输入与质量门。", "结合图与源表判读。"]
+
+[[sections.components.note_items]]
+kind = "boundary"
+label.en = "Claim boundary"
+label.zh = "结论边界"
+body.en = "This figure shows an association and does not establish causality by itself."
+body.zh = "该图展示关联，不单独证明因果关系。"
+```
+
+Allowed kinds are `summary`, `question`, `purpose`, `input`, `method`,
+`elements`, `reading`, `observation`, `result`, `meaning`, `boundary`,
+`limitation`, `next`, and `provenance`. Each item allows only `kind`, `label`,
+`body`, and `items`; at least one of `body` or `items` is required. Every
+declared report language must be present. Each `items.<lang>` is a non-empty
+array of plain strings, and all languages must have the same item count.
+Unknown fields or kinds, missing languages, empty text, and unequal list counts
+fail validation.
+
+Values are escaped plain text. Markdown, HTML, CSS, JavaScript, class/style/event
+fields, and URL-control fields are not part of this DSL. Normalize, migrate,
+collection expansion, and `report.normalized.json` preserve the structure;
+`explain` reports counts and kinds for every section and component. Legacy
+`note` remains valid, while `lint` emits localized warnings for unusually long
+unstructured English or Chinese notes.
 
 ## Components
 

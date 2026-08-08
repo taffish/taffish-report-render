@@ -32,7 +32,7 @@ from .components import (
 )
 
 
-TEMPLATE_VERSION = "taffish-flow-report-render-0.2"
+TEMPLATE_VERSION = "taffish-flow-report-render-0.3"
 RENDER_COMPONENTS = [
     "dashboard_cards",
     "status_grid",
@@ -80,6 +80,41 @@ LANGUAGE_NAMES = {
 }
 ACTIVE_LANGUAGES = DEFAULT_LANGUAGES[:]
 ACTIVE_LANGUAGE_DEFAULT = DEFAULT_LANGUAGE
+
+NOTE_ITEM_KINDS = (
+    "summary",
+    "question",
+    "purpose",
+    "input",
+    "method",
+    "elements",
+    "reading",
+    "observation",
+    "result",
+    "meaning",
+    "boundary",
+    "limitation",
+    "next",
+    "provenance",
+)
+NOTE_ITEM_FIELDS = {"kind", "label", "body", "items"}
+NOTE_ITEM_ICONS = {
+    "summary": "S",
+    "question": "?",
+    "purpose": "P",
+    "input": "I",
+    "method": "M",
+    "elements": "E",
+    "reading": "R",
+    "observation": "O",
+    "result": "R",
+    "meaning": "M",
+    "boundary": "B",
+    "limitation": "L",
+    "next": "N",
+    "provenance": "V",
+}
+NOTE_LENGTH_WARN_LIMITS = {"zh": 240, "en": 700}
 
 DEFAULT_SITE_GROUP_STYLES: dict[str, dict[str, Any]] = {
     "target_matches_DHA": {
@@ -140,6 +175,7 @@ COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
             "note",
             "preview_rows",
             "embed_full",
+            "fold_i18n_columns",
             "default_state",
             "max_embed_rows",
             "max_embed_bytes",
@@ -213,6 +249,7 @@ COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
             "note",
             "preview_rows",
             "embed_full",
+            "fold_i18n_columns",
             "default_state",
             "max_embed_rows",
             "max_embed_bytes",
@@ -249,6 +286,13 @@ COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
     },
 }
 COMPONENT_REGISTRY.update(COMPONENT_REGISTRY_EXTENSIONS)
+for _component_info in COMPONENT_REGISTRY.values():
+    _fields = _component_info.setdefault("fields", [])
+    if "note_items" not in _fields:
+        try:
+            _fields.insert(_fields.index("note") + 1, "note_items")
+        except ValueError:
+            _fields.append("note_items")
 
 
 COMPONENT_DOCS: dict[str, str] = {
@@ -595,6 +639,64 @@ def i18n(value: Any, key: str | None = None) -> str:
             f'<span class="report-i18n lang-{escape(lang)}" data-i18n-lang="{escape(lang, quote=True)}">{text}</span>'
             for lang in ACTIVE_LANGUAGES
         )
+
+
+def render_structured_note_items(owner: dict[str, Any]) -> str:
+    note_items = owner.get("note_items")
+    if not isinstance(note_items, list) or not note_items:
+        return ""
+    rendered_items: list[str] = []
+    for item in note_items:
+        kind = str(item.get("kind", "summary"))
+        if kind not in NOTE_ITEM_KINDS:
+            continue
+        body_html = f'<p class="structured-note-body">{i18n(item.get("body"))}</p>' if item.get("body") else ""
+        list_html = ""
+        localized_items = item.get("items")
+        if isinstance(localized_items, dict) and localized_items:
+            item_count = max((len(value) for value in localized_items.values() if isinstance(value, list)), default=0)
+            rows = []
+            for index in range(item_count):
+                localized_row = {
+                    lang: values[index]
+                    for lang, values in localized_items.items()
+                    if isinstance(values, list) and index < len(values)
+                }
+                rows.append(f"<li>{i18n(localized_row)}</li>")
+            list_html = '<ul class="structured-note-list">' + "".join(rows) + "</ul>"
+        rendered_items.append(
+            f'<div class="structured-note-item structured-note-kind-{escape(kind)}" data-note-kind="{escape(kind, quote=True)}">'
+            '<dt>'
+            f'<span class="structured-note-kind-icon" aria-hidden="true">{escape(NOTE_ITEM_ICONS[kind])}</span>'
+            f'<span class="structured-note-label">{i18n(item.get("label"))}</span>'
+            '</dt>'
+            f'<dd>{body_html}{list_html}</dd>'
+            '</div>'
+        )
+    if not rendered_items:
+        return ""
+    kinds = ",".join(str(item.get("kind", "")) for item in note_items)
+    return (
+        f'<dl class="structured-note" data-structured-note-count="{len(rendered_items)}" '
+        f'data-structured-note-kinds="{escape(kinds, quote=True)}">'
+        + "".join(rendered_items)
+        + "</dl>"
+    )
+
+
+def render_note_block(
+    owner: dict[str, Any],
+    fallback: Any = None,
+    classes: str = "component-note-block",
+) -> str:
+    lead = owner.get("note")
+    if lead is None:
+        lead = fallback
+    lead_html = f'<p class="structured-note-lead">{i18n(lead)}</p>' if lead else ""
+    items_html = render_structured_note_items(owner)
+    if not lead_html and not items_html:
+        return ""
+    return f'<div class="{escape(classes)}">{lead_html}{items_html}</div>'
 
 
 def text_value(value: Any, fallback: str = "") -> str:
@@ -1232,6 +1334,11 @@ def scalar_override(component: dict[str, Any], target: dict[str, Any], keys: lis
             target[key] = component[key]
 
 
+def copy_collection_note_items(component: dict[str, Any], target: dict[str, Any]) -> None:
+    if "note_items" in component:
+        target["note_items"] = json.loads(json.dumps(component["note_items"], ensure_ascii=False))
+
+
 def expand_collection_component(component: dict[str, Any], root: Path) -> list[dict[str, Any]]:
     ctype = str(component.get("type", ""))
     rel = str(component.get("source", ""))
@@ -1256,6 +1363,7 @@ def expand_collection_component(component: dict[str, Any], root: Path) -> list[d
                 "note": row_i18n(row, "note", row_first(row, ["caption", "description"], image)),
             }
             scalar_override(component, item, ["zoom", "default_fit"])
+            copy_collection_note_items(component, item)
             expanded.append(item)
             continue
         if ctype == "table_collection":
@@ -1274,6 +1382,7 @@ def expand_collection_component(component: dict[str, Any], root: Path) -> list[d
                 item[key] = row_int(row, [key], default, minimum=0 if key == "preview_rows" else 1)
             item["embed_full"] = row_bool(row, ["embed_full"], bool_value(component.get("embed_full"), True))
             item["default_state"] = row_first(row, ["default_state"], str(component.get("default_state", "preview")))
+            copy_collection_note_items(component, item)
             expanded.append(item)
             continue
         if ctype == "code_file_collection":
@@ -1290,6 +1399,7 @@ def expand_collection_component(component: dict[str, Any], root: Path) -> list[d
                 "copy": row_bool(row, ["copy"], bool_value(component.get("copy"), True)),
             }
             scalar_override(component, item, ["max_embed_bytes", "max_lines"])
+            copy_collection_note_items(component, item)
             expanded.append(item)
             continue
         if ctype == "native_subreport_collection":
@@ -1308,6 +1418,7 @@ def expand_collection_component(component: dict[str, Any], root: Path) -> list[d
             }
             if "linked_page_limit" in component or row_first(row, ["linked_page_limit"], ""):
                 item["linked_page_limit"] = row_int(row, ["linked_page_limit"], int_value(component.get("linked_page_limit"), 25, minimum=1), minimum=1)
+            copy_collection_note_items(component, item)
             expanded.append(item)
             continue
         raise RenderError(f"unsupported collection component type: {ctype}")
@@ -1376,6 +1487,53 @@ def validate_i18n(value: Any, label: str) -> None:
         raise RenderError(f"{label} must contain both en and zh text")
 
 
+def validate_note_item_languages(value: Any, location: str, languages: list[str]) -> None:
+    if not isinstance(value, dict):
+        raise RenderError(f"{location} must be a language table")
+    for lang in languages:
+        if lang not in value or not isinstance(value[lang], str) or not value[lang].strip():
+            raise RenderError(f"{location}.{lang} must be a non-empty string")
+
+
+def validate_note_items(value: Any, location: str, languages: list[str]) -> None:
+    if value is None:
+        return
+    if not isinstance(value, list):
+        raise RenderError(f"{location} must be an array of tables")
+    for index, item in enumerate(value, start=1):
+        item_location = f"{location}[{index}]"
+        if not isinstance(item, dict):
+            raise RenderError(f"{item_location} must be a table")
+        unknown = sorted(set(item) - NOTE_ITEM_FIELDS)
+        if unknown:
+            raise RenderError(f"{item_location} has unknown fields: {', '.join(unknown)}")
+        kind = item.get("kind")
+        if not isinstance(kind, str) or kind not in NOTE_ITEM_KINDS:
+            raise RenderError(f"{item_location}.kind must be one of: {', '.join(NOTE_ITEM_KINDS)}")
+        validate_note_item_languages(item.get("label"), f"{item_location}.label", languages)
+        has_body = "body" in item
+        has_items = "items" in item
+        if not has_body and not has_items:
+            raise RenderError(f"{item_location} requires body or items")
+        if has_body:
+            validate_note_item_languages(item.get("body"), f"{item_location}.body", languages)
+        if has_items:
+            items = item.get("items")
+            if not isinstance(items, dict):
+                raise RenderError(f"{item_location}.items must be a language table of string arrays")
+            expected_count: int | None = None
+            for lang in languages:
+                language_items = items.get(lang)
+                if not isinstance(language_items, list) or not language_items:
+                    raise RenderError(f"{item_location}.items.{lang} must be a non-empty string array")
+                if any(not isinstance(entry, str) or not entry.strip() for entry in language_items):
+                    raise RenderError(f"{item_location}.items.{lang} contains an empty or non-string item")
+                if expected_count is None:
+                    expected_count = len(language_items)
+                elif len(language_items) != expected_count:
+                    raise RenderError(f"{item_location}.items language arrays must have the same number of entries")
+
+
 def validate_component_required_fields(component: dict[str, Any], location: str) -> None:
     ctype = str(component.get("type", ""))
     info = COMPONENT_REGISTRY.get(ctype, {})
@@ -1434,7 +1592,7 @@ def validate_spec(spec: dict[str, Any], allow_collections: bool = True) -> None:
     if not isinstance(project, dict):
         raise RenderError("project table is required")
     validate_i18n(project.get("title"), "project.title")
-    normalize_languages(spec.get("languages"), spec.get("language_default", DEFAULT_LANGUAGE))
+    languages, _ = normalize_languages(spec.get("languages"), spec.get("language_default", DEFAULT_LANGUAGE))
     sections = spec.get("sections")
     if not isinstance(sections, list) or not sections:
         raise RenderError("at least one section is required")
@@ -1450,6 +1608,7 @@ def validate_spec(spec: dict[str, Any], allow_collections: bool = True) -> None:
             raise RenderError(f"section id is reserved by the renderer: {section_id}")
         seen_sections.add(section_id)
         validate_i18n(section.get("title"), f"section {section_id}.title")
+        validate_note_items(section.get("note_items"), f"section {section_id}.note_items", languages)
         for cidx, component in enumerate(section.get("components", []), start=1):
             if not isinstance(component, dict):
                 raise RenderError(f"component {section_id}.{cidx} is not an object")
@@ -1462,6 +1621,11 @@ def validate_spec(spec: dict[str, Any], allow_collections: bool = True) -> None:
             if component_id in seen_components:
                 raise RenderError(f"duplicate component id: {component_id}")
             seen_components.add(component_id)
+            validate_note_items(
+                component.get("note_items"),
+                f"component {section_id}.{component_id}.note_items",
+                languages,
+            )
             validate_component_required_fields(component, f"component {section_id}.{component_id}")
 
 
@@ -1522,7 +1686,11 @@ def render_dashboard(component: dict[str, Any], ctx: RenderContext) -> str:
             f"<p>{label('Empty source table.', '源表为空。')}</p>"
             "</article>"
         )
-    return f'<div class="dashboard-grid" id="{escape(component["id"])}">' + "\n".join(cards) + "</div>"
+    return (
+        f'<div class="dashboard-component" id="{escape(component["id"])}">'
+        f'{render_note_block(component, classes="component-intro")}'
+        f'<div class="dashboard-grid">' + "\n".join(cards) + "</div></div>"
+    )
 
 
 def render_status_grid(component: dict[str, Any], ctx: RenderContext) -> str:
@@ -1546,7 +1714,11 @@ def render_status_grid(component: dict[str, Any], ctx: RenderContext) -> str:
             "</div>"
             "</article>"
         )
-    return f'<div class="status-grid" id="{escape(component["id"])}">' + "\n".join(cards) + "</div>"
+    return (
+        f'<div class="status-component" id="{escape(component["id"])}">'
+        f'{render_note_block(component, classes="component-intro")}'
+        f'<div class="status-grid">' + "\n".join(cards) + "</div></div>"
+    )
 
 
 def render_table_rows(columns: list[TableColumn], rows: list[dict[str, str]], preview_limit: int | None = None) -> str:
@@ -1582,10 +1754,7 @@ def render_table(
 
 
 def render_component_intro(component: dict[str, Any]) -> str:
-    note = component.get("note")
-    if not note:
-        return ""
-    return f'<div class="component-intro">{i18n(note)}</div>'
+    return render_note_block(component, classes="component-intro")
 
 
 def render_quality_gate_table(component: dict[str, Any], ctx: RenderContext) -> str:
@@ -1764,7 +1933,7 @@ def render_code_file(component: dict[str, Any], ctx: RenderContext) -> str:
         "</div>"
         f"{copy_button}"
         "</div>"
-        f'<p class="code-file-note">{i18n(note)}</p>'
+        f'{render_note_block(component, fallback=note, classes="code-file-note component-note-block")}'
         f'<pre class="code-file-pre"><code id="{escape(component["id"], quote=True)}-code" data-code-language="{escape(syntax, quote=True)}">{escape(text)}</code></pre>'
         f"{truncated_note}"
         "</article>"
@@ -1840,7 +2009,11 @@ def render_plot_card(component: dict[str, Any], ctx: RenderContext) -> str:
         "</span>"
         "</figcaption>"
     )
-    note_html = f'<div class="plot-note plot-note-{escape(note_position)}">{i18n(note)}</div>'
+    note_html = render_note_block(
+        component,
+        fallback=note,
+        classes=f"plot-note plot-note-{note_position} component-note-block",
+    )
     if layout == "media":
         image_position = str(component.get("image_position", "left")).strip().lower()
         vertical_align = str(component.get("media_vertical_align", "start")).strip().lower()
@@ -2110,7 +2283,7 @@ def render_tree_viewer(component: dict[str, Any], ctx: RenderContext) -> str:
         '<div class="tree-viewer-head">'
         "<div>"
         f"<strong>{i18n(title)}</strong>"
-        f"<p>{i18n(note)}</p>"
+        f'{render_note_block(component, fallback=note, classes="component-note-block")}'
         "</div>"
         '<span class="tree-runtime-badge">Newick</span>'
         "</div>"
@@ -2294,7 +2467,7 @@ def render_sequence_alignment(component: dict[str, Any], ctx: RenderContext) -> 
         '<div class="alignment-head">'
         "<div>"
         f"<strong>{i18n(title)}</strong>"
-        f"<p>{i18n(note)}</p>"
+        f'{render_note_block(component, fallback=note, classes="component-note-block")}'
         "</div>"
         f'<span class="alignment-runtime-badge">{escape(alphabet.upper())}</span>'
         "</div>"
@@ -2544,7 +2717,7 @@ def render_genome_browser(component: dict[str, Any], ctx: RenderContext) -> str:
         '<div class="genome-browser-head">'
         "<div>"
         f"<strong>{i18n(title)}</strong>"
-        f"<p>{i18n(note)}</p>"
+        f'{render_note_block(component, fallback=note, classes="component-note-block")}'
         "</div>"
         '<div class="genome-browser-head-actions">'
         f"{mode_switch}"
@@ -2818,7 +2991,7 @@ def render_interactive_plot(component: dict[str, Any], ctx: RenderContext) -> st
         '<div class="interactive-plot-head">'
         "<div>"
         f"<strong>{i18n(title)}</strong>"
-        f"<p>{i18n(note)}</p>"
+        f'{render_note_block(component, fallback=note, classes="component-note-block")}'
         f"<small>{i18n(source_note)}</small>"
         "</div>"
         f'<span class="interactive-plot-badge">{label("interactive", "交互")}</span>'
@@ -3246,7 +3419,7 @@ def render_structure_viewer(component: dict[str, Any], ctx: RenderContext) -> st
         '<div class="structure-head">'
         "<div>"
         f"<strong>{i18n(title)}</strong>"
-        f"<p>{i18n(note)}</p>"
+        f'{render_note_block(component, fallback=note, classes="component-note-block")}'
         "</div>"
         f'<span class="structure-runtime-badge">{escape(runtime)}</span>'
         "</div>"
@@ -3355,7 +3528,7 @@ def render_native_subreport(component: dict[str, Any], ctx: RenderContext) -> st
         f'<span class="status-dot status-{"ok" if status == "embedded" else "warn"}"></span>'
         f"<strong>{i18n(title)}</strong>"
         "</div>"
-        f"<p>{i18n(note)}</p>"
+        f'{render_note_block(component, fallback=note, classes="component-note-block")}'
         "<dl>"
         f"<div><dt>{field_label('kind')}</dt><dd>{escape(str(kind))}</dd></div>"
         f"<div><dt>{field_label('source')}</dt><dd>{escape(rel)}</dd></div>"
@@ -3418,7 +3591,7 @@ def section_note(section: dict[str, Any]) -> dict[str, str]:
 
 def render_section_shell(section: dict[str, Any], body: str, note: dict[str, str] | None = None) -> str:
     sid = section["id"]
-    note_html = f'<p>{i18n(note)}</p>' if note else ""
+    note_html = render_note_block(section, fallback=note, classes="section-note-block")
     return (
         f'<section class="section" id="{escape(sid)}">'
         '<div class="section-head">'
@@ -3880,6 +4053,39 @@ def check_text_languages(issues: list[LintIssue], value: Any, location: str, lan
             add_issue(issues, "warn", location, f"missing {lang!r} text; renderer will use fallback text")
 
 
+def check_long_unstructured_note(
+    issues: list[LintIssue],
+    owner: dict[str, Any],
+    location: str,
+    languages: list[str],
+) -> None:
+    note = owner.get("note")
+    if note is None or owner.get("note_items"):
+        return
+    if isinstance(note, dict):
+        for lang in languages:
+            value = note.get(lang)
+            if not isinstance(value, str):
+                continue
+            limit = NOTE_LENGTH_WARN_LIMITS.get(lang, 500)
+            length = len(value.strip())
+            if length > limit:
+                add_issue(
+                    issues,
+                    "warn",
+                    f"{location}.{lang}",
+                    f"long note ({length} characters; suggested maximum {limit}) has no note_items",
+                )
+        return
+    if isinstance(note, str) and len(note.strip()) > 500:
+        add_issue(
+            issues,
+            "warn",
+            location,
+            f"long unstructured note ({len(note.strip())} characters) has no note_items",
+        )
+
+
 def lint_spec(spec: dict[str, Any], root: Path | None = None, strict: bool = False) -> tuple[list[LintIssue], dict[str, Any] | None]:
     issues: list[LintIssue] = []
     try:
@@ -3907,6 +4113,7 @@ def lint_spec(spec: dict[str, Any], root: Path | None = None, strict: bool = Fal
         check_text_languages(issues, section.get("title"), f"sections.{section_id}.title", languages)
         if section.get("note") is not None:
             check_text_languages(issues, section.get("note"), f"sections.{section_id}.note", languages)
+        check_long_unstructured_note(issues, section, f"sections.{section_id}.note", languages)
         components = section.get("components", [])
         if not components:
             add_issue(issues, "warn", f"sections.{section_id}", "section has no components")
@@ -3921,6 +4128,7 @@ def lint_spec(spec: dict[str, Any], root: Path | None = None, strict: bool = Fal
                 check_text_languages(issues, component.get("title"), f"{location}.title", languages)
             if component.get("note") is not None:
                 check_text_languages(issues, component.get("note"), f"{location}.note", languages)
+            check_long_unstructured_note(issues, component, f"{location}.note", languages)
             known_fields = set(COMPONENT_REGISTRY.get(ctype, {}).get("fields", []))
             if strict:
                 for key in component:
@@ -3995,6 +4203,8 @@ def explain_manifest(manifest: dict[str, Any], root: Path | None = None) -> dict
                     "id": component.get("id"),
                     "type": component.get("type"),
                     "title": text_value(component.get("title"), str(component.get("id", ""))),
+                    "note_item_count": len(component.get("note_items", [])),
+                    "note_item_kinds": [item.get("kind") for item in component.get("note_items", [])],
                     "paths": path_infos,
                 }
             )
@@ -4003,6 +4213,8 @@ def explain_manifest(manifest: dict[str, Any], root: Path | None = None) -> dict
                 "id": section.get("id"),
                 "kind": section.get("kind"),
                 "title": text_value(section.get("title"), str(section.get("id", ""))),
+                "note_item_count": len(section.get("note_items", [])),
+                "note_item_kinds": [item.get("kind") for item in section.get("note_items", [])],
                 "component_count": len(components),
                 "components": components,
             }
@@ -4032,9 +4244,13 @@ def report_json_schema() -> dict[str, Any]:
             "id": {"type": "string"},
             "title": {"$ref": "#/$defs/i18nText"},
             "note": {"$ref": "#/$defs/i18nText"},
+            "note_items": {
+                "type": "array",
+                "items": {"$ref": "#/$defs/noteItem"},
+            },
         }
         for field_name in info.get("fields", []):
-            if field_name in properties or field_name in {"id", "type", "title", "note"}:
+            if field_name in properties or field_name in {"id", "type", "title", "note", "note_items"}:
                 continue
             if field_name in {
                 "source",
@@ -4194,6 +4410,37 @@ def report_json_schema() -> dict[str, Any]:
                 "properties": {lang: {"type": "string"} for lang in LANGUAGE_NAMES},
                 "additionalProperties": {"type": "string"},
             },
+            "noteItem": {
+                "type": "object",
+                "properties": {
+                    "kind": {"type": "string", "enum": list(NOTE_ITEM_KINDS)},
+                    "label": {"$ref": "#/$defs/noteI18nText"},
+                    "body": {"$ref": "#/$defs/noteI18nText"},
+                    "items": {"$ref": "#/$defs/noteI18nList"},
+                },
+                "required": ["kind", "label"],
+                "anyOf": [{"required": ["body"]}, {"required": ["items"]}],
+                "additionalProperties": False,
+            },
+            "noteI18nText": {
+                "type": "object",
+                "properties": {lang: {"type": "string", "minLength": 1} for lang in LANGUAGE_NAMES},
+                "required": ["en", "zh"],
+                "additionalProperties": {"type": "string", "minLength": 1},
+            },
+            "noteI18nList": {
+                "type": "object",
+                "properties": {
+                    lang: {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+                    for lang in LANGUAGE_NAMES
+                },
+                "required": ["en", "zh"],
+                "additionalProperties": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {"type": "string", "minLength": 1},
+                },
+            },
             "section": {
                 "type": "object",
                 "required": ["title"],
@@ -4202,6 +4449,10 @@ def report_json_schema() -> dict[str, Any]:
                     "kind": {"type": "string"},
                     "title": {"$ref": "#/$defs/i18nText"},
                     "note": {"$ref": "#/$defs/i18nText"},
+                    "note_items": {
+                        "type": "array",
+                        "items": {"$ref": "#/$defs/noteItem"},
+                    },
                     "components": {
                         "type": "array",
                         "items": {"anyOf": [{"$ref": f"#/$defs/{name}"} for name in COMPONENTS]},
@@ -4223,6 +4474,10 @@ def toml_scalar(value: Any) -> str:
         return "true" if value else "false"
     if isinstance(value, int):
         return str(value)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise RenderError("cannot migrate a non-finite number to TOML")
+        return repr(value)
     if isinstance(value, list):
         return "[" + ", ".join(toml_scalar(item) for item in value) + "]"
     return toml_quote("" if value is None else str(value))
@@ -4234,6 +4489,22 @@ def toml_write_i18n(lines: list[str], prefix: str, value: Any) -> None:
             lines.append(f"{prefix}.{lang} = {toml_scalar(value[lang])}")
     elif value is not None:
         lines.append(f"{prefix} = {toml_scalar(value)}")
+
+
+def toml_write_note_items(lines: list[str], table_path: str, note_items: Any) -> None:
+    if not isinstance(note_items, list):
+        return
+    for item in note_items:
+        if not isinstance(item, dict):
+            continue
+        lines.append("")
+        lines.append(f"[[{table_path}]]")
+        lines.append(f"kind = {toml_scalar(item.get('kind'))}")
+        toml_write_i18n(lines, "label", item.get("label"))
+        if item.get("body") is not None:
+            toml_write_i18n(lines, "body", item.get("body"))
+        if isinstance(item.get("items"), dict):
+            toml_write_i18n(lines, "items", item.get("items"))
 
 
 def dump_toml_spec(manifest: dict[str, Any]) -> str:
@@ -4258,20 +4529,24 @@ def dump_toml_spec(manifest: dict[str, Any]) -> str:
         lines.append("")
         lines.append("[[sections]]")
         for key, value in section.items():
-            if key == "components":
+            if key in {"components", "note_items"}:
                 continue
             if isinstance(value, dict):
                 toml_write_i18n(lines, key, value)
             else:
                 lines.append(f"{key} = {toml_scalar(value)}")
+        toml_write_note_items(lines, "sections.note_items", section.get("note_items"))
         for component in section.get("components", []):
             lines.append("")
             lines.append("[[sections.components]]")
             for key, value in component.items():
+                if key == "note_items":
+                    continue
                 if isinstance(value, dict):
                     toml_write_i18n(lines, key, value)
                 else:
                     lines.append(f"{key} = {toml_scalar(value)}")
+            toml_write_note_items(lines, "sections.components.note_items", component.get("note_items"))
     return "\n".join(lines) + "\n"
 
 
@@ -4416,10 +4691,18 @@ def command_explain(args: argparse.Namespace) -> int:
     if root is not None:
         print(f"source bytes: {explanation['referenced_source_bytes']}")
     for section in explanation["sections"]:
-        print(f"- {section['id']} [{section['kind']}] components={section['component_count']}")
+        section_kinds = ",".join(str(kind) for kind in section["note_item_kinds"]) or "none"
+        print(
+            f"- {section['id']} [{section['kind']}] components={section['component_count']} "
+            f"note_items={section['note_item_count']} kinds={section_kinds}"
+        )
         for component in section["components"]:
             path_text = ", ".join(item["path"] for item in component["paths"]) if component["paths"] else "no direct asset"
-            print(f"  - {component['id']} ({component['type']}): {path_text}")
+            component_kinds = ",".join(str(kind) for kind in component["note_item_kinds"]) or "none"
+            print(
+                f"  - {component['id']} ({component['type']}): {path_text}; "
+                f"note_items={component['note_item_count']} kinds={component_kinds}"
+            )
     return 0
 
 
@@ -4502,6 +4785,15 @@ def starter_report_toml(include_demo_assets: bool = False) -> str:
 type = "dashboard_cards"
 id = "summary"
 source = "04_reports/key_metrics.tsv"
+title.zh = "0.1 输入、输出与核心状态"
+title.en = "0.1 Inputs, Outputs, and Headline Status"
+
+[[sections.components.note_items]]
+kind = "reading"
+label.zh = "怎么看"
+label.en = "How to read"
+body.zh = "先检查状态卡，再进入详细表格和图。"
+body.en = "Review the status cards before opening detailed tables and plots."
 """
     if include_demo_assets:
         components += """
@@ -4524,7 +4816,7 @@ caption.en = "This SVG image is embedded into the final HTML."
 """
     return f"""schema_version = "0.1"
 template = "taffish-flow-report"
-template_version = "0.1"
+template_version = "{TEMPLATE_VERSION}"
 languages = ["en", "zh"]
 language_default = "zh"
 
@@ -4543,8 +4835,17 @@ versions = "04_reports/versions.tsv"
 [[sections]]
 id = "overview"
 kind = "overview"
-title.zh = "项目总览"
-title.en = "Project Overview"
+title.zh = "0. 项目总览"
+title.en = "0. Project Overview"
+note.zh = "先确认报告身份和主要状态。"
+note.en = "Confirm report identity and headline status first."
+
+[[sections.note_items]]
+kind = "boundary"
+label.zh = "说明边界"
+label.en = "Boundary"
+body.zh = "示例报告只验证 renderer，不代表科学分析已完成。"
+body.en = "This starter validates the renderer; it does not represent a completed scientific analysis."
 
 {components}"""
 

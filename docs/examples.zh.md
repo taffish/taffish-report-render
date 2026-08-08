@@ -34,6 +34,64 @@ open report-example/04_reports/report.html
 步骤产生 summary 表、图片和 HTML 子报告，再写出 `report.toml`。`tests/test-real-run.sh`
 必须使用真实报告输出和真实 runtime，不使用 demo、假 viewer 或 test shim 作为通过依据。
 
+## 长报告的编号结构
+
+正式报告建议先按读者问题组织，再给可见标题加层级编号。编号写在 `title.<lang>`，稳定
+`id` 不带编号：
+
+```toml
+[[sections]]
+id = "overview"
+title.zh = "0. 项目总览"
+title.en = "0. Project Overview"
+note.zh = "先回答项目目的、输入、已完成工作、主要输出和当前结论。"
+note.en = "Start with the purpose, inputs, completed work, outputs and current conclusion."
+
+[[sections.components]]
+type = "dashboard_cards"
+id = "overview_headline"
+title.zh = "0.1 输入、输出与核心结果"
+title.en = "0.1 Inputs, Outputs and Headline Results"
+source = "04_reports/project_summary_cards.tsv"
+
+[[sections]]
+id = "input_quality"
+title.zh = "1. 输入数据是否可信"
+title.en = "1. Can the Input Data Be Trusted?"
+
+[[sections.components]]
+type = "quality_gate_table"
+id = "input_quality_gates"
+title.zh = "1.1 输入质量门禁"
+title.en = "1.1 Input Quality Gates"
+source = "04_reports/input_quality_gates.tsv"
+```
+
+项目总览通常使用 `0.`，正文使用 `1.`、`2.`，组件使用 `1.1`、`1.2`。技术附录可以使用
+`A.` / `A.1`。所有语言使用相同编号；章节重排只更新可见标题，不修改语义 ID、文件路径和
+provenance 身份。renderer 当前不会自动编号。
+
+长说明不要继续堆进一个 `note`。保留一两句导语，再用结构化条目：
+
+```toml
+[[sections.note_items]]
+kind = "question"
+label.zh = "问题"
+label.en = "Question"
+body.zh = "输入数据是否足以支持后续判读？"
+body.en = "Are the inputs sufficient for downstream interpretation?"
+
+[[sections.components.note_items]]
+kind = "reading"
+label.zh = "如何阅读"
+label.en = "How to read"
+items.zh = ["先看质量门状态。", "再核对观察值与阈值。"]
+items.en = ["Read the quality-gate status first.", "Then compare observations with thresholds."]
+```
+
+section 与所有固定组件使用同一 `note_items` 契约；双语列表条数必须一致，内容只按纯文本
+处理。完整字段和 kind 见 [Report Spec 结构](report-spec.zh.md#结构化说明-note_items)。
+
 ## Flow 中的推荐调用
 
 flow 的标准做法：
@@ -66,7 +124,7 @@ taf-taffish-report-render render \
 高级参数槽。例如：
 
 ```taf
-[[taf: taf-taffish-report-render-v0.2.0-r1 render \
+[[taf: taf-taffish-report-render-v0.3.0-r1 render \
   --spec '"$report_spec"' \
   --root '"$outdir"' \
   --out '"$report_html"' \

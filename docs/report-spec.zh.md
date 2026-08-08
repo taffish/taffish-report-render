@@ -39,8 +39,8 @@ versions = "04_reports/versions.tsv"
 [[sections]]
 id = "overview"
 kind = "overview"
-title.zh = "项目总览"
-title.en = "Project Overview"
+title.zh = "0. 项目总览"
+title.en = "0. Project Overview"
 
 [[sections.components]]
 type = "dashboard_cards"
@@ -129,8 +129,8 @@ subtitle.en = "Reference-guided RNA-seq standard analysis."
 [[sections]]
 id = "de"
 kind = "analysis"
-title.zh = "差异表达"
-title.en = "Differential Expression"
+title.zh = "1. 差异表达"
+title.en = "1. Differential Expression"
 note.zh = "展示条件间表达变化和样本结构。"
 note.en = "Shows expression changes and sample structure."
 ```
@@ -142,8 +142,8 @@ note.en = "Shows expression changes and sample structure."
 type = "plot_card"
 id = "de-volcano"
 image = "03_results/plots/de.volcano_plot.png"
-title.zh = "火山图"
-title.en = "Volcano plot"
+title.zh = "1.1 火山图"
+title.en = "1.1 Volcano plot"
 ```
 
 规则：
@@ -154,6 +154,80 @@ title.en = "Volcano plot"
 - 未知组件类型应验证失败；
 - 左侧目录顺序必须和 TOML 中的章节、组件顺序一致；
 - component 只描述展示方式，不应包含执行命令或分析逻辑。
+
+### 可见章节编号与稳定 ID
+
+较长的正式报告建议显式编号大小章节，方便目录阅读、会议讨论和审阅引用：
+
+```toml
+[[sections]]
+id = "input_quality"
+title.zh = "1. 输入数据质量"
+title.en = "1. Input Data Quality"
+
+[[sections.components]]
+type = "dashboard_cards"
+id = "input_quality_headline"
+title.zh = "1.1 输入规模与关键质量结果"
+title.en = "1.1 Input Scale and Headline Quality Results"
+source = "04_reports/input_quality_cards.tsv"
+```
+
+编号规则：
+
+- 总览或阅读入口可从 `0.` 开始，正文使用 `1.`、`2.`，组件使用 `1.1`、`1.2`；
+- 独立技术附录可使用 `A.`、`A.1`，也可继续顺序数字，但同一报告应保持一致；
+- 同一标题在所有语言中使用相同编号；
+- 编号写在 `title.<lang>` 中，renderer 不会自动编号；
+- `section.id` 和 component `id` 使用不含编号的稳定语义名。章节重排可以改可见编号，
+  不应改 anchor、数据路径或 provenance 身份；
+- 内部模块码、attempt/run ID 和目录编号只属于 provenance，不能代替读者章节编号。
+
+主要结果章的 `note.<lang>` 应交代问题、输入、完成工作、输出、判读标准和结论边界。
+正式图表组件的说明建议覆盖用途、数据来源、元素/字段、判读标准、本次观察和不能推出的结论。
+
+### 结构化说明 `note_items`
+
+`note` 继续作为向后兼容的简短导语；需要分层表达的正式报告应在 section 或任意固定组件上
+增加有序 `note_items`。renderer 保持数组顺序，并用语义化 `dl` / `dt` / `dd`、`p`、
+`ul` / `li` 渲染纯文本内容：
+
+```toml
+note.zh = "先读问题与边界，再看图表。"
+note.en = "Read the question and boundary before the figures."
+
+[[sections.note_items]]
+kind = "question"
+label.zh = "问题"
+label.en = "Question"
+body.zh = "基因组区域之间是否存在可重复的结构差异？"
+body.en = "Do genomic compartments show reproducible structural differences?"
+
+[[sections.note_items]]
+kind = "reading"
+label.zh = "如何阅读"
+label.en = "How to read"
+items.zh = ["先核对输入与质量门。", "再结合图与源表判读。"]
+items.en = ["Check inputs and quality gates first.", "Then interpret the figure with its source table."]
+
+[[sections.components.note_items]]
+kind = "boundary"
+label.zh = "结论边界"
+label.en = "Claim boundary"
+body.zh = "该图展示关联，不单独证明因果关系。"
+body.en = "This figure shows an association and does not establish causality by itself."
+```
+
+固定 `kind` 为：`summary`、`question`、`purpose`、`input`、`method`、`elements`、
+`reading`、`observation`、`result`、`meaning`、`boundary`、`limitation`、`next`、
+`provenance`。每项只允许 `kind`、`label`、`body`、`items`；`body` 与 `items` 至少提供
+一个。所有声明语言都必须完整出现，`items.<lang>` 必须是非空纯字符串数组，且各语言条数
+一致。未知字段、未知 kind、缺语言、空文本或条数不一致都会验证失败。
+
+所有内容按纯文本转义；Markdown、HTML、CSS、JavaScript、class/style/event 与 URL
+控制字段都不是 DSL。`normalize`、`migrate`、collection 展开和 `report.normalized.json`
+必须无损保留这些结构；`explain` 会报告每个 section/component 的条数与 kind。旧 `note`
+仍可独立使用，但 `lint` 会对异常长且未提供 `note_items` 的中英文说明给出定位明确的警告。
 
 布局字段是有类型、经过校验的 renderer 输入，不是任意 CSS 逃生口。例如
 `plot_card layout = "media"` 的 `media_image_ratio` 只能是 `0.25–0.70` 内的有限数值，

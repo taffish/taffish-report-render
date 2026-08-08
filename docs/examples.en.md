@@ -39,8 +39,8 @@ subtitle.zh = "由 TOML 和本地结果资产生成。"
 id = "overview"
 kicker.en = "Overview"
 kicker.zh = "总览"
-title.en = "Project Overview"
-title.zh = "项目总览"
+title.en = "0. Project Overview"
+title.zh = "0. 项目总览"
 text.en = "Review the report status and main outputs first."
 text.zh = "先查看报告状态和主要输出。"
 
@@ -48,7 +48,40 @@ text.zh = "先查看报告状态和主要输出。"
 id = "summary"
 type = "dashboard_cards"
 source = "03_results/tables/summary.tsv"
+title.en = "0.1 Inputs, Outputs, and Headline Results"
+title.zh = "0.1 输入、输出与核心结果"
 ```
+
+For a long report, continue with `1.`, `2.`, and `1.1`, `1.2`; an independent
+technical appendix may use `A.` / `A.1`. Put the same number in every localized
+title, while keeping semantic IDs stable and unnumbered. The renderer preserves
+author-provided numbering but does not generate it automatically. Reordering a
+chapter may change its visible number without changing anchors, asset paths, or
+provenance identity.
+
+Do not keep growing one long `note`. Retain a one- or two-sentence lead and
+split the explanation into structured items:
+
+```toml
+[[sections.note_items]]
+kind = "question"
+label.en = "Question"
+label.zh = "问题"
+body.en = "Are the inputs sufficient for downstream interpretation?"
+body.zh = "输入数据是否足以支持后续判读？"
+
+[[sections.components.note_items]]
+kind = "reading"
+label.en = "How to read"
+label.zh = "如何阅读"
+items.en = ["Read the quality-gate status first.", "Then compare observations with thresholds."]
+items.zh = ["先看质量门状态。", "再核对观察值与阈值。"]
+```
+
+Sections and all fixed components use the same `note_items` contract. Localized
+lists have equal counts and values remain escaped plain text. See the
+[report-spec manual](report-spec.en.md#structured-explanations-with-note_items)
+for the complete field and kind contract.
 
 ## Flow Integration
 

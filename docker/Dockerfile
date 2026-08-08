@@ -17,7 +17,7 @@ RUN chmod +x /usr/local/bin/report-render \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/ngl/VERSION \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/igv/igv.min.js \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/igv/VERSION \
- && report-render --version | grep -F "0.2.0-r1" >/dev/null \
+ && report-render --version | grep -Fx "taffish-report-render 0.3.0-r1" >/dev/null \
  && report-render components > /tmp/taffish-components.txt \
  && grep -F native_subreport_collection /tmp/taffish-components.txt >/dev/null \
  && grep -F interactive_plot /tmp/taffish-components.txt >/dev/null \
@@ -33,6 +33,8 @@ RUN chmod +x /usr/local/bin/report-render \
  && grep -F '"sequence_alignment"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"genome_browser"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"media_image_ratio"' /tmp/taffish-schema.json >/dev/null \
+ && grep -F '"note_items"' /tmp/taffish-schema.json >/dev/null \
+ && grep -F '"boundary"' /tmp/taffish-schema.json >/dev/null \
  && echo 'b66b25aeb4df84e33199dc21694014d336d222cbd9deb0e5a7c14bd6aa0d0fd0  /opt/taffish-report-render/python/taffish_report_render/assets/echarts-6.1.0.min.js' | sha256sum -c - \
  && echo '60169d9df25530f1d5e29c663ceb18ea7492862acb308800fc5ab0f0bf31a41e  /opt/taffish-report-render/python/taffish_report_render/assets/plotly-1.2.0.min.js' | sha256sum -c - \
  && echo 'be8d4b16f1d73458efd70d2a3319ef2888fb6fa821732c319a99ff43a8e4f7e0  /opt/taffish-report-render/python/taffish_report_render/runtime_packs/ngl/ngl.js' | sha256sum -c - \

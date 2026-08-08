@@ -26,7 +26,7 @@ default_run=false
 fixtures=()
 
 flow_fixtures=(ngs-qc bam-qc phylogeny rnaseq-reference rnaseq-denovo chengdu-yuanda-report12)
-component_fixtures=(component-basic-report component-media-layout-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report)
+component_fixtures=(component-basic-report component-media-layout-report component-structured-notes-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report)
 
 usage() {
     cat <<'EOF'
@@ -38,7 +38,7 @@ real-style component regression scenarios into ignored local outputs. The
 no-argument default cleans the previous output directory and renders:
 
   ngs-qc bam-qc phylogeny rnaseq-reference rnaseq-denovo chengdu-yuanda-report12
-  component-basic-report component-media-layout-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report
+  component-basic-report component-media-layout-report component-structured-notes-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report
 
 The first group renders from corresponding real flow output trees, not from a
 trimmed "normal" fixture. RNA-seq reference and de novo scenarios use the public
@@ -1667,7 +1667,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "component-regression-basic"
 title.en = "Basic component regression test"
 title.zh = "基础组件库测试"
@@ -1780,7 +1780,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "component-media-layout-report"
 title.en = "Scientific media-layout regression"
 title.zh = "科研图文 media 布局回归"
@@ -1913,6 +1913,41 @@ TOML
     grep -F 'pufa-structure-confidence.png' "$files_index" >/dev/null
 }
 
+render_component_structured_notes() {
+    local fixture="component-structured-notes-report"
+    local fixture_dir
+    fixture_dir=$(fixture_work_dir "$fixture")
+    local source_root="$fixture_dir/source"
+    local spec="$fixture_dir/report.full.toml"
+    python3 "$script_dir/build-structured-notes-fixture.py" --root "$source_root" --spec "$spec"
+
+    render_from_spec "$fixture" "$source_root" "$spec" 250000 0
+    local report="$fixture_dir/04_reports/taffish_report.html"
+    local normalized="$fixture_dir/04_reports/report.normalized.json"
+    local migrated="$fixture_dir/report.migrated.toml"
+    local explained="$fixture_dir/report.explained.json"
+
+    "$renderer" migrate --spec "$spec" --root "$source_root" --format toml > "$migrated"
+    "$renderer" validate-spec --spec "$migrated" --root "$source_root"
+    "$renderer" explain --spec "$spec" --root "$source_root" --json > "$explained"
+    grep -F 'class="structured-note"' "$report" >/dev/null
+    grep -F 'data-structured-note-count="6"' "$report" >/dev/null
+    grep -F 'data-structured-note-kinds="question,input,method,reading,observation,boundary"' "$report" >/dev/null
+    grep -F '&lt;script data-taffish-attack=' "$report" >/dev/null
+    if grep -F '<script data-taffish-attack=' "$report" >/dev/null; then
+        echo "ERROR: structured note markup was not escaped" >&2
+        exit 1
+    fi
+    grep -F '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' "$report" >/dev/null
+    grep -F 'NO_SPACE_TOKEN_' "$report" >/dev/null
+    grep -F '"note_item_count": 6' "$explained" >/dev/null
+    grep -F '"note_items"' "$normalized" >/dev/null
+    grep -F '[[sections.note_items]]' "$migrated" >/dev/null
+    grep -F '@media (max-width: 820px)' "$report" >/dev/null
+    grep -F '@media (max-width: 680px)' "$report" >/dev/null
+    grep -F '@media print' "$report" >/dev/null
+}
+
 render_component_echarts() {
     local fixture="component-echarts-report"
     local fixture_dir
@@ -1948,7 +1983,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "component-component-echarts-report"
 title.en = "ECharts interactive plot library test"
 title.zh = "ECharts 交互图组件库测试"
@@ -2042,7 +2077,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "component-component-tree-alignment-report"
 title.en = "Tree and alignment component regression test"
 title.zh = "树和多序列比对组件库测试"
@@ -2228,7 +2263,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "component-component-igv-report"
 title.en = "IGV genome browser library test"
 title.zh = "IGV 基因组浏览组件库测试"
@@ -2327,7 +2362,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "component-ngl-native-report"
 title.en = "Real NGL structure component regression"
 title.zh = "真实 NGL 结构组件回归"
@@ -2475,6 +2510,9 @@ for fixture in "${fixtures[@]}"; do
             ;;
         component-media-layout-report)
             render_component_media_layout
+            ;;
+        component-structured-notes-report)
+            render_component_structured_notes
             ;;
         component-echarts-report)
             render_component_echarts

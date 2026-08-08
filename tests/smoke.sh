@@ -15,7 +15,7 @@ rm -rf "$render_root"
 mkdir -p "$render_root"
 
 echo "[SMOKE] version and components"
-"$renderer" --version | grep -F "0.2.0-r1" >/dev/null
+"$renderer" --version | grep -Fx "taffish-report-render 0.3.0-r1" >/dev/null
 "$renderer" components | grep -F "native_subreport" >/dev/null
 "$renderer" components | grep -F "code_file" >/dev/null
 "$renderer" components | grep -F "structure_viewer" >/dev/null
@@ -28,15 +28,23 @@ echo "[SMOKE] version and components"
 "$renderer" component-doc structure_viewer | grep -F "structure_viewer embeds" >/dev/null
 "$renderer" component-doc interactive_plot | grep -F "interactive_plot embeds" >/dev/null
 "$renderer" component-doc plot_card | grep -F "layout supports grid, wide, and media" >/dev/null
+"$renderer" component-doc plot_card | grep -F "note_items" >/dev/null
 "$renderer" schema | grep -F '"media_image_ratio"' >/dev/null
+"$renderer" schema | grep -F '"note_items"' >/dev/null
+"$renderer" schema | grep -F '"boundary"' >/dev/null
+
+echo "[SMOKE] structured-note unit and round-trip contract"
+python3 "$app_root/tests/test_structured_notes.py"
 
 echo "[SMOKE] init stdout and demo workspace"
 "$renderer" init > "$render_root/report.template.toml"
 grep -F 'template = "taffish-flow-report"' "$render_root/report.template.toml" >/dev/null
+grep -F '[[sections.note_items]]' "$render_root/report.template.toml" >/dev/null
 "$renderer" new --outdir "$render_root/demo" --force >/dev/null
 "$renderer" validate-spec --spec "$render_root/demo/report.toml"
 "$renderer" lint --spec "$render_root/demo/report.toml" --root "$render_root/demo"
 "$renderer" explain --spec "$render_root/demo/report.toml" --root "$render_root/demo" | grep -F "components:" >/dev/null
+"$renderer" explain --spec "$render_root/demo/report.toml" --root "$render_root/demo" | grep -F "note_items=1 kinds=boundary" >/dev/null
 "$renderer" migrate --spec "$render_root/demo/report.toml" --root "$render_root/demo" --format json > "$render_root/demo/report.normalized.preflight.json"
 grep -F '"type": "plot_card"' "$render_root/demo/report.normalized.preflight.json" >/dev/null
 "$renderer" render \
@@ -47,6 +55,7 @@ grep -F '"type": "plot_card"' "$render_root/demo/report.normalized.preflight.jso
   --validate
 grep -F "data-open-image" "$render_root/demo/04_reports/report.html" >/dev/null
 grep -F "data-image-modal" "$render_root/demo/04_reports/report.html" >/dev/null
+grep -F 'data-structured-note-count="1"' "$render_root/demo/04_reports/report.html" >/dev/null
 grep -F "standalone_html" "$render_root/demo/04_reports/report.html" >/dev/null
 "$renderer" inspect-html "$render_root/demo/04_reports/report.html" --validate | grep -F "template: taffish-flow-report" >/dev/null
 "$renderer" list-assets "$render_root/demo/04_reports" | grep -F "renderer-html" >/dev/null
@@ -239,7 +248,7 @@ language_default = "zh"
 
 [project]
 flow_name = "media-layout-regression"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "component-regression"
 title.en = "Media Layout Regression"
 title.zh = "媒体布局回归测试"
@@ -785,7 +794,7 @@ language_default = "zh"
 
 [project]
 flow_name = "bio-viewer-smoke"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "bio-viewers"
 title.zh = "生信浏览器组件测试"
 title.en = "Bio Viewer Component Smoke"
@@ -874,7 +883,7 @@ language_default = "zh"
 
 [project]
 flow_name = "policy-smoke"
-flow_version = "0.2.0-r1"
+flow_version = "0.3.0-r1"
 analysis_mode = "native-subreport-policy"
 title.zh = "子报告策略测试"
 title.en = "Subreport Policy Smoke"
