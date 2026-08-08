@@ -1,4 +1,4 @@
-taffish-report-render 0.3.0-r1
+taffish-report-render 0.3.1-r1
 
 Usage:
   taf-taffish-report-render COMMAND [OPTIONS]
@@ -53,6 +53,7 @@ Common components:
 
 Plot layouts:
   plot_card supports grid, wide, and responsive media layouts.
+  PNG, JPEG, WebP, and SVG use deterministic renderer-owned MIME mappings.
   See the component manual for validated media ratios and alignment fields.
 
 Structured notes:

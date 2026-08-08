@@ -101,7 +101,7 @@ taf-taffish-report-render migrate --spec report.toml --root OUTDIR --format json
 ```toml
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "reference"
 title.zh = "TAFFISH RNA-seq 项目报告"
 title.en = "TAFFISH RNA-seq project report"

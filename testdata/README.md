@@ -93,12 +93,13 @@ rnaseq-denovo
 chengdu-yuanda-report12
 ```
 
-第二组是 7 个真实报告风格的组件回归报告，每个报告用小而真实的领域数据验证一种 runtime
+第二组是 8 个真实报告风格的组件回归报告，每个报告用小而真实的领域数据验证一种 runtime
 或组件接口：
 
 ```text
 component-basic-report
 component-media-layout-report
+component-image-mime-report
 component-structured-notes-report
 component-echarts-report
 component-tree-alignment-report
@@ -113,6 +114,12 @@ component-ngl-native-report
 `component-media-layout-report` 使用真实系统发育树、RNA-seq 热图和蛋白结构置信度图片，
 覆盖横图、竖图、透明背景图、左右换位、`0.30/0.42/0.50/0.70` 比例、顶部/居中对齐、
 三种预定义间距、长中英文说明、连续 media 卡片以及 media/grid/wide 混排。
+`component-image-mime-report` 生成真实的小型图片字节，并按真菌报告等价分布组织 logo +
+2 PNG + 4 SVG + 1 WebP；它要求 `inspect-html data_image_count=8`、WebP 精确为
+`data:image/webp`、非图片 MIME 为 0，同时确认 sidecar 的存在性检查不能替代 HTML MIME
+检查。快速 `tests/smoke.sh` 另覆盖真实 PNG/JPEG/WebP/SVG 四格式和错误 MIME 负例；
+`tests/image-offline-smoke.py` 在不依赖 Bash 的正式 Alpine 镜像内重复关键契约，供 amd64
+和 arm64 候选分别以 `--network none` 运行。
 `component-structured-notes-report` 使用长双语科研叙述、六项双语列表、SHA-256、accession、
 run ID、URL 样式与无空格长串，覆盖全部 14 种固定 `note_items.kind`、恶意文本转义、
 normalize/migrate/explain 保留，以及 wide/media/table/workflow/技术附录的响应式和打印边界。
@@ -197,6 +204,8 @@ tests/test-real-run-out/component-regression/rendered_reports.tsv
   子报告 payload。
 - `component-media-layout-report` 使用真实系统发育树、RNA-seq 热图和蛋白结构置信度图片，
   覆盖 media/grid/wide 混排、固定比例、左右位置、长双语说明及 820/821 px 折叠边界。
+- `component-image-mime-report` 使用真实 PNG/SVG/WebP 字节复现真菌报告的 8 图分布，
+  验证 WebP MIME、总图片计数、异常 `<img>` MIME 计数和 sidecar 记录相互独立。
 - `component-structured-notes-report` 覆盖全部 14 种固定说明 kind、长双语段落与列表、
   恶意文本安全转义、TOML/JSON 往返保留、collection 展开和页面级响应式溢出治理。
 - `component-echarts-report` 使用真实表达/富集结果语境的 DE、PCA 和 ORA 表，覆盖

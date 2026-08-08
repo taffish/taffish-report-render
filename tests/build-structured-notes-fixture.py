@@ -128,7 +128,7 @@ def build(root: Path, spec: Path) -> None:
         "",
         "[project]",
         'flow_name = "taffish-report-render"',
-        'flow_version = "0.3.0-r1"',
+        'flow_version = "0.3.1-r1"',
         'analysis_mode = "component-structured-notes-report"',
         'title.en = "0. Structured explanation and responsive overflow stress report"',
         'title.zh = "0. 结构化说明与响应式溢出压力报告"',

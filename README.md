@@ -20,10 +20,10 @@ Package identity:
 
 - name: `taffish-report-render`
 - command: `taf-taffish-report-render`
-- TAFFISH version: `0.3.0-r1`
+- TAFFISH version: `0.3.1-r1`
 - kind: `tool`
-- image candidate: `ghcr.io/taffish/taffish-report-render:0.3.0-r1`
-- runtime identity: `taffish-report-render 0.3.0-r1`
+- image candidate: `ghcr.io/taffish/taffish-report-render:0.3.1-r1`
+- runtime identity: `taffish-report-render 0.3.1-r1`
 - native platforms: `linux/amd64`, `linux/arm64`
 
 The report spec is the only structural configuration input. Users do not write
@@ -178,6 +178,13 @@ historical `grid` and `wide` layouts plus a responsive `media` layout for a
 side-by-side figure and explanation. Media cards use validated ratios and
 renderer-defined spacing; report specs never inject arbitrary CSS.
 
+PNG, JPEG, WebP, and SVG assets use renderer-owned MIME mappings, so the same
+input produces the same data URI on every supported host and container. The
+host `/etc/mime.types` database is used only as a fallback for formats outside
+this core set. `validate-html` rejects an actual `<img>` whose data URI has a
+non-image MIME, and `inspect-html` reports
+`non_image_img_data_uri_count` alongside the existing `data_image_count`.
+
 For long reports, author visible hierarchical numbers in localized titles,
 such as `0. Project Overview`, `2. Results`, and `2.1 Headline Evidence`.
 Use the same number in every language, while keeping section and component IDs
@@ -219,6 +226,11 @@ audit sidecars next to the report, including:
 
 These sidecars are useful for review, reproducibility, and debugging. They are
 not required to open the final HTML report.
+
+For image-bearing reports, successful file records in `report_files.tsv` prove
+that the source assets were read, but do not by themselves prove the embedded
+MIME. Release validation therefore checks the rendered HTML data URI prefixes
+and `inspect-html` counts as separate contracts.
 
 ## Testing Contract
 

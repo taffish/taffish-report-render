@@ -240,7 +240,15 @@
 - [ ] 主 CSS 已内联。
 - [ ] 导航、语言切换和子报告打开所需的主 JavaScript 已内联。
 - [ ] 主 PNG/SVG 图以非空 data URI 嵌入。
+- [ ] PNG、JPG/JPEG、WebP、SVG 核心格式必须使用 renderer 内部的确定性 MIME 映射，
+      不得依赖宿主机或容器的 `/etc/mime.types`；映射至少固定为 `image/png`、
+      `image/jpeg`、`image/webp`、`image/svg+xml`。
+- [ ] smoke 使用真实的小型 PNG、JPEG、WebP、SVG 文件渲染报告，并分别断言最终 HTML
+      的精确 data URI prefix；不能只检查文件存在或 `report_files.tsv = ok`。
 - [ ] 空图片 payload，例如 `data:image/...;base64,`，必须验证失败。
+- [ ] 主文档真实 `<img>` 若使用 `application/octet-stream` 或其它非 `image/*` data URI，
+      `validate-html` 必须失败，`inspect-html` 必须通过
+      `non_image_img_data_uri_count` 报告异常数量；runtime 脚本字符串中的伪标签不得误报。
 - [ ] 必需外部 CSS、JavaScript、图片或字体 URL 必须 standalone 验证失败；
       除非它们明确标记为非必需 external link。
 - [ ] 主报告中出现真实 `<script src=...>`、外部 stylesheet、空 data URI 或测试用
@@ -339,6 +347,9 @@
       的 `layout="media"`，包含左右图片、`0.30/0.42/0.50/0.70` 比例、start/center、
       compact/normal/relaxed、长中英文说明、连续三张以上 media 卡片和
       media/grid/wide 混排。
+- [ ] `component-image-mime-report` 使用真菌报告等价的 logo + 7 张正文图分布（2 PNG、
+      4 SVG、1 WebP），断言 `data_image_count = 8`、WebP 精确为 `image/webp`、
+      非图片 MIME 数量为 0，并逐项核对 sidecar 状态。
 - [ ] `component-structured-notes-report` 覆盖长双语段落/列表、固定 kinds、恶意文本转义、
       migrate/normalized/explain 保留，以及 wide/media/table/workflow/appendix 响应式压力路径。
 - [ ] 生成的 fixture 报告在视觉和能力上不低于复制来的 baseline 或来源路径中记录的现有报告。
@@ -508,6 +519,9 @@
 
 - [ ] `taf check` 通过。
 - [ ] Docker build 在声明平台上通过。
+- [ ] 正式 amd64 和 arm64 候选镜像内分别运行独立 `--network none` 的真实四格式 MIME
+      smoke（`tests/image-offline-smoke.py`）；Dockerfile build-time 只执行轻量确定性映射
+      自检，不运行浏览器或完整报告矩阵，也不为测试向精简 Alpine runtime 添加 Bash。
 - [ ] `taf build` 通过。
 - [ ] wrapper `--help` 和 `--version` 可用。
 - [ ] `taf build` 后至少测试一个非 `-` 开头子命令，例如

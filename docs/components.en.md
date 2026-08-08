@@ -175,7 +175,9 @@ Behavior:
   when `image_position = "right"`;
 - long titles, links, and uninterrupted identifiers wrap inside the copy
   column; images retain their full aspect ratio with `object-fit: contain`;
-- PNG, JPEG, WebP, and SVG use the same embedding and lightbox behavior.
+- PNG, JPEG, WebP, and SVG use renderer-owned deterministic MIME mappings and
+  the same embedding and lightbox behavior; their exact data URI prefixes do
+  not depend on the host or container MIME database.
 
 Example:
 

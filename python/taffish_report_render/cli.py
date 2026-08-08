@@ -115,6 +115,13 @@ NOTE_ITEM_ICONS = {
     "provenance": "V",
 }
 NOTE_LENGTH_WARN_LIMITS = {"zh": 240, "en": 700}
+IMAGE_MIME_TYPES = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+}
 
 DEFAULT_SITE_GROUP_STYLES: dict[str, dict[str, Any]] = {
     "target_matches_DHA": {
@@ -936,9 +943,16 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def mime_type_for_path(path: Path) -> str:
+    mime = IMAGE_MIME_TYPES.get(path.suffix.lower())
+    if mime is not None:
+        return mime
+    return mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+
+
 def data_uri(path: Path) -> str:
     data = path.read_bytes()
-    mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    mime = mime_type_for_path(path)
     encoded = base64.b64encode(data).decode("ascii")
     return f"data:{mime};base64,{encoded}"
 
@@ -4552,6 +4566,7 @@ def dump_toml_spec(manifest: dict[str, Any]) -> str:
 
 def html_summary(path: Path) -> dict[str, Any]:
     html = path.read_text(encoding="utf-8", errors="replace")
+    image_data_uri_mimes = main_document_image_data_uri_mimes(html)
     payload_match = re.search(r'<script[^>]+id="embedded-subreports-data"[^>]*>(.*?)</script>', html, re.I | re.S)
     payload_count = 0
     if payload_match:
@@ -4564,6 +4579,7 @@ def html_summary(path: Path) -> dict[str, Any]:
         "bytes": path.stat().st_size,
         "template": "taffish-flow-report" if 'data-template="taffish-flow-report"' in html else "",
         "data_image_count": html.count("data:image/"),
+        "non_image_img_data_uri_count": sum(not mime.startswith("image/") for mime in image_data_uri_mimes),
         "embedded_subreport_payloads": payload_count,
         "external_stylesheet_links": len(re.findall(r"<link\b[^>]*stylesheet", html, re.I)),
         "external_script_src": len(re.findall(r"<script\b[^>]*\bsrc\s*=", html, re.I)),
@@ -4776,6 +4792,7 @@ def command_list_assets(args: argparse.Namespace) -> int:
         if "html" in payload:
             print(f"html_bytes: {payload['html']['bytes']}")
             print(f"data_image_count: {payload['html']['data_image_count']}")
+            print(f"non_image_img_data_uri_count: {payload['html']['non_image_img_data_uri_count']}")
             print(f"embedded_subreport_payloads: {payload['html']['embedded_subreport_payloads']}")
     return 0
 
@@ -4913,6 +4930,18 @@ def command_new(args: argparse.Namespace) -> int:
     return 0
 
 
+def main_document_image_data_uri_mimes(html: str) -> list[str]:
+    main_markup = re.sub(r"<script\b[^>]*>.*?</script\s*>", "", html, flags=re.I | re.S)
+    mimes: list[str] = []
+    for match in re.finditer(r"<img\b([^>]*)>", main_markup, re.I | re.S):
+        src = attr_value(match.group(1), "src")
+        if src is None or not src.lower().startswith("data:"):
+            continue
+        mime_match = re.match(r"data:([^;,]+)(?:;[^,]*)?,", src, re.I)
+        mimes.append(mime_match.group(1).lower() if mime_match else "")
+    return mimes
+
+
 def validate_html_file(path: Path) -> None:
     html = path.read_text(encoding="utf-8", errors="replace")
     required = [
@@ -4942,6 +4971,16 @@ def validate_html_file(path: Path) -> None:
         raise RenderError("html validation failed; external script src found in main report")
     if re.search(r"data:image/[^;\"']+;base64,[\"']", html, re.I):
         raise RenderError("html validation failed; empty image data URI found")
+    invalid_image_mimes = [
+        mime or "<invalid>"
+        for mime in main_document_image_data_uri_mimes(html)
+        if not mime.startswith("image/")
+    ]
+    if invalid_image_mimes:
+        raise RenderError(
+            "html validation failed; image element uses non-image data URI MIME: "
+            + ", ".join(sorted(set(invalid_image_mimes)))
+        )
     if "TAFFISH_NGL_TEST_SHIM" in html and os.environ.get("TAFFISH_REPORT_RENDER_ALLOW_RUNTIME_SHIMS") != "1":
         raise RenderError("html validation failed; test-only NGL shim found in a non-test validation context")
     if "TAFFISH_IGV_TEST_SHIM" in html and os.environ.get("TAFFISH_REPORT_RENDER_ALLOW_RUNTIME_SHIMS") != "1":

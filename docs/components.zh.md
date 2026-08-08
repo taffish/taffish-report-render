@@ -392,6 +392,8 @@ note.en = "Shows global sample expression structure."
 - 大图打开时先完整适配当前窗口；
 - 用户可放大、缩小、回到适配窗口；
 - 图片仍然是内嵌 payload，不依赖外部文件；
+- PNG、JPEG、WebP 和 SVG 使用 renderer 内部的确定性 MIME 映射，不依赖宿主机或
+  容器的 `/etc/mime.types`；WebP 必须稳定生成 `data:image/webp;base64,`；
 - 连续 `plot_card` 会自动形成图片网格；
 - `layout = "wide"` 可让主图独占一行，`note_position = "top"` 可把解释放到图片上方；
 - 不同类型组件不会混进 plot grid。

@@ -41,7 +41,7 @@ def base_spec() -> dict[str, object]:
         "language_default": "zh",
         "project": {
             "flow_name": "structured-note-test",
-            "flow_version": "0.3.0-r1",
+            "flow_version": "0.3.1-r1",
             "analysis_mode": "unit",
             "title": {"en": "Structured note test", "zh": "结构化说明测试"},
         },

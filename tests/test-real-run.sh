@@ -26,7 +26,7 @@ default_run=false
 fixtures=()
 
 flow_fixtures=(ngs-qc bam-qc phylogeny rnaseq-reference rnaseq-denovo chengdu-yuanda-report12)
-component_fixtures=(component-basic-report component-media-layout-report component-structured-notes-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report)
+component_fixtures=(component-basic-report component-media-layout-report component-image-mime-report component-structured-notes-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report)
 
 usage() {
     cat <<'EOF'
@@ -38,7 +38,7 @@ real-style component regression scenarios into ignored local outputs. The
 no-argument default cleans the previous output directory and renders:
 
   ngs-qc bam-qc phylogeny rnaseq-reference rnaseq-denovo chengdu-yuanda-report12
-  component-basic-report component-media-layout-report component-structured-notes-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report
+  component-basic-report component-media-layout-report component-image-mime-report component-structured-notes-report component-echarts-report component-tree-alignment-report component-igv-report component-ngl-native-report
 
 The first group renders from corresponding real flow output trees, not from a
 trimmed "normal" fixture. RNA-seq reference and de novo scenarios use the public
@@ -1207,7 +1207,7 @@ language_default = "zh"
 
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "reference"
 title.zh = "TAFFISH RNA-seq 有参分析完整报告"
 title.en = "TAFFISH RNA-seq full reference report"
@@ -1407,7 +1407,7 @@ language_default = "zh"
 
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "denovo"
 title.zh = "TAFFISH RNA-seq 无参分析完整报告"
 title.en = "TAFFISH RNA-seq full de novo report"
@@ -1667,7 +1667,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "component-regression-basic"
 title.en = "Basic component regression test"
 title.zh = "基础组件库测试"
@@ -1780,7 +1780,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "component-media-layout-report"
 title.en = "Scientific media-layout regression"
 title.zh = "科研图文 media 布局回归"
@@ -1913,6 +1913,64 @@ TOML
     grep -F 'pufa-structure-confidence.png' "$files_index" >/dev/null
 }
 
+render_component_image_mime() {
+    local fixture="component-image-mime-report"
+    local fixture_dir
+    fixture_dir=$(fixture_work_dir "$fixture")
+    local source_root="$fixture_dir/source"
+    local spec="$fixture_dir/report.full.toml"
+    local report="$fixture_dir/04_reports/taffish_report.html"
+    local files_index="$fixture_dir/04_reports/report_files.tsv"
+    local inspection="$fixture_dir/04_reports/inspect.json"
+
+    python3 "$script_dir/build-image-mime-fixture.py" \
+        --root "$source_root" \
+        --spec "$spec" \
+        --profile fungal-equivalent
+
+    render_from_spec "$fixture" "$source_root" "$spec" 220000 0
+    "$renderer" inspect-html "$report" --validate --json > "$inspection"
+    python3 - "$report" "$files_index" "$inspection" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+report = Path(sys.argv[1]).read_text(encoding="utf-8")
+files_index = Path(sys.argv[2]).read_text(encoding="utf-8")
+inspection = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+
+expected_counts = {
+    "data:image/png;base64,": 3,
+    "data:image/svg+xml;base64,": 4,
+    "data:image/webp;base64,": 1,
+    "data:image/jpeg;base64,": 0,
+    "data:application/octet-stream;base64,": 0,
+}
+for marker, expected in expected_counts.items():
+    observed = report.count(marker)
+    if observed != expected:
+        raise SystemExit(f"{marker}: expected {expected}, observed {observed}")
+if inspection["data_image_count"] != 8:
+    raise SystemExit(f"data_image_count must be 8, got {inspection['data_image_count']}")
+if inspection["non_image_img_data_uri_count"] != 0:
+    raise SystemExit("non-image MIME leaked onto a rendered img element")
+
+expected_assets = [
+    "genome-overview.png",
+    "compartment-summary.png",
+    "workflow.svg",
+    "chromosome-map.svg",
+    "gene-density.svg",
+    "repeat-density.svg",
+    "sonah-2016-figure-1.webp",
+]
+for name in expected_assets:
+    rows = [line for line in files_index.splitlines()[1:] if name in line]
+    if len(rows) != 1 or "\tok\t" not in rows[0]:
+        raise SystemExit(f"expected one ok sidecar record for {name}: {rows}")
+PY
+}
+
 render_component_structured_notes() {
     local fixture="component-structured-notes-report"
     local fixture_dir
@@ -1983,7 +2041,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "component-component-echarts-report"
 title.en = "ECharts interactive plot library test"
 title.zh = "ECharts 交互图组件库测试"
@@ -2077,7 +2135,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "component-component-tree-alignment-report"
 title.en = "Tree and alignment component regression test"
 title.zh = "树和多序列比对组件库测试"
@@ -2263,7 +2321,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "component-component-igv-report"
 title.en = "IGV genome browser library test"
 title.zh = "IGV 基因组浏览组件库测试"
@@ -2362,7 +2420,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "component-ngl-native-report"
 title.en = "Real NGL structure component regression"
 title.zh = "真实 NGL 结构组件回归"
@@ -2510,6 +2568,9 @@ for fixture in "${fixtures[@]}"; do
             ;;
         component-media-layout-report)
             render_component_media_layout
+            ;;
+        component-image-mime-report)
+            render_component_image_mime
             ;;
         component-structured-notes-report)
             render_component_structured_notes

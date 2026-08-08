@@ -124,7 +124,7 @@ taf-taffish-report-render render \
 高级参数槽。例如：
 
 ```taf
-[[taf: taf-taffish-report-render-v0.3.0-r1 render \
+[[taf: taf-taffish-report-render-v0.3.1-r1 render \
   --spec '"$report_spec"' \
   --root '"$outdir"' \
   --out '"$report_html"' \

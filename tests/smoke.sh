@@ -5,9 +5,9 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 app_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 hub_root=$(CDPATH= cd -- "$app_root/../../../../.." && pwd)
 
-export PYTHONPATH="$app_root/python"
-renderer="$app_root/bin/report-render"
-render_root="$app_root/tests/smoke-out"
+export PYTHONPATH="${TAFFISH_REPORT_RENDER_PYTHONPATH:-$app_root/python}"
+renderer="${TAFFISH_REPORT_RENDER_BIN:-$app_root/bin/report-render}"
+render_root="${TAFFISH_REPORT_RENDER_SMOKE_OUT:-$app_root/tests/smoke-out}"
 outdir="$render_root/ngs-qc"
 report="$outdir/04_reports/taffish_report.html"
 
@@ -15,7 +15,7 @@ rm -rf "$render_root"
 mkdir -p "$render_root"
 
 echo "[SMOKE] version and components"
-"$renderer" --version | grep -Fx "taffish-report-render 0.3.0-r1" >/dev/null
+"$renderer" --version | grep -Fx "taffish-report-render 0.3.1-r1" >/dev/null
 "$renderer" components | grep -F "native_subreport" >/dev/null
 "$renderer" components | grep -F "code_file" >/dev/null
 "$renderer" components | grep -F "structure_viewer" >/dev/null
@@ -33,8 +33,62 @@ echo "[SMOKE] version and components"
 "$renderer" schema | grep -F '"note_items"' >/dev/null
 "$renderer" schema | grep -F '"boundary"' >/dev/null
 
-echo "[SMOKE] structured-note unit and round-trip contract"
-python3 "$app_root/tests/test_structured_notes.py"
+echo "[SMOKE] unit, round-trip, and deterministic MIME contracts"
+python3 -m unittest discover -s "$app_root/tests" -p 'test_*.py'
+
+echo "[SMOKE] real PNG, JPEG, WebP, and SVG MIME fixture"
+mime_root="$render_root/image-mime"
+mime_spec="$mime_root/report.toml"
+mime_report="$mime_root/04_reports/taffish_report.html"
+python3 "$app_root/tests/build-image-mime-fixture.py" \
+  --root "$mime_root" \
+  --spec "$mime_spec" \
+  --profile core
+"$renderer" validate-spec --spec "$mime_spec" --root "$mime_root"
+"$renderer" lint --strict --spec "$mime_spec" --root "$mime_root"
+"$renderer" render \
+  --spec "$mime_spec" \
+  --root "$mime_root" \
+  --out "$mime_report" \
+  --force \
+  --validate
+for expected in \
+  'data:image/png;base64,' \
+  'data:image/jpeg;base64,' \
+  'data:image/webp;base64,' \
+  'data:image/svg+xml;base64,'
+do
+  grep -F "$expected" "$mime_report" >/dev/null
+done
+if grep -F 'data:application/octet-stream;base64,' "$mime_report" >/dev/null; then
+  echo "unexpected application/octet-stream image in MIME smoke report" >&2
+  exit 1
+fi
+mime_inspection="$mime_root/inspect.json"
+"$renderer" inspect-html "$mime_report" --validate --json > "$mime_inspection"
+grep -F '"data_image_count": 5' "$mime_inspection" >/dev/null
+grep -F '"non_image_img_data_uri_count": 0' "$mime_inspection" >/dev/null
+test "$(awk -F '\t' 'NR > 1 && $1 == "image" { count += 1 } END { print count + 0 }' "$mime_root/04_reports/report_files.tsv")" = "4"
+
+bad_mime_report="$mime_root/04_reports/invalid-image-mime.html"
+python3 - "$mime_report" "$bad_mime_report" <<'PY'
+from pathlib import Path
+import sys
+
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+bad = source.replace("data:image/webp;base64,", "data:application/octet-stream;base64,", 1)
+if bad == source:
+    raise SystemExit("WebP data URI was not found in the valid fixture")
+Path(sys.argv[2]).write_text(bad, encoding="utf-8")
+PY
+if "$renderer" validate-html "$bad_mime_report" > "$mime_root/invalid.stdout" 2> "$mime_root/invalid.stderr"; then
+  echo "validate-html unexpectedly accepted a non-image MIME on an img element" >&2
+  exit 1
+fi
+grep -F 'image element uses non-image data URI MIME: application/octet-stream' "$mime_root/invalid.stderr" >/dev/null
+"$renderer" inspect-html "$bad_mime_report" --json > "$mime_root/invalid.inspect.json"
+grep -F '"data_image_count": 4' "$mime_root/invalid.inspect.json" >/dev/null
+grep -F '"non_image_img_data_uri_count": 1' "$mime_root/invalid.inspect.json" >/dev/null
 
 echo "[SMOKE] init stdout and demo workspace"
 "$renderer" init > "$render_root/report.template.toml"
@@ -248,7 +302,7 @@ language_default = "zh"
 
 [project]
 flow_name = "media-layout-regression"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "component-regression"
 title.en = "Media Layout Regression"
 title.zh = "媒体布局回归测试"
@@ -794,7 +848,7 @@ language_default = "zh"
 
 [project]
 flow_name = "bio-viewer-smoke"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "bio-viewers"
 title.zh = "生信浏览器组件测试"
 title.en = "Bio Viewer Component Smoke"
@@ -883,7 +937,7 @@ language_default = "zh"
 
 [project]
 flow_name = "policy-smoke"
-flow_version = "0.3.0-r1"
+flow_version = "0.3.1-r1"
 analysis_mode = "native-subreport-policy"
 title.zh = "子报告策略测试"
 title.en = "Subreport Policy Smoke"
