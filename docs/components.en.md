@@ -183,10 +183,16 @@ Behavior:
   image precedes the copy even when `image_position = "right"`; at `620px` and
   below compact notes become one column. Equivalent viewport-query fallbacks
   cover browsers without container-query support;
+- after a compact card folds at `900px`, its image is centered at natural width,
+  remains within the component, and uses `max-height: min(720px, 85vh)`; a
+  portrait image is not enlarged to fill the available text column;
 - long titles, links, and uninterrupted identifiers wrap inside the copy
   column; images retain their full aspect ratio with `object-fit: contain`;
 - compact image and copy columns stretch to the same row height without fixed
   card heights, cropping, absolute positioning, or overflow clipping;
+- paired compact structured-note cards stretch only within their own grid row;
+  print keeps images centered at natural width with a deterministic `180mm`
+  cap rather than a viewport-height rule;
 - PNG, JPEG, WebP, and SVG use renderer-owned deterministic MIME mappings and
   the same embedding and lightbox behavior; their exact data URI prefixes do
   not depend on the host or container MIME database.

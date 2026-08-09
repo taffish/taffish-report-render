@@ -11,7 +11,7 @@ import zlib
 from pathlib import Path
 
 
-LANDSCAPE_WEBP = "UklGRlYAAABXRUJQVlA4TEkAAAAv78AiABcgEEjEMtnfYRSxYMIzf6+uAG5kP/9xQ2NQ3LZtlKvLdJp7yU5q5Bv3E9H/CRDO+sC9Do0LVv6XkFKMC2x/gIR1hG4CAA=="
+LANDSCAPE_WEBP = "UklGRgABAABXRUJQVlA4TPQAAAAvwwkNAgfQrcZ0s/8BAUnS//9kRP8z/vOf//znP//5z3/+85///Oc///nPf/7zn//85z//+c9//vOf//znP//5z3/+85///Oc///nPf/7zn//85z//+c9//vOf//znP//5z3/+85///Oc///nPf/7zn//85z//+c9//vOf//znP//5z3/+85///Oc///nPf/7zn//85z//+c9//vOf//znP//5z3/+85///Oc///nPf/7zn//85z//+c9//vOf//znP//5z3/+85///Oc///nPf/7zn//85z//+c9//vOf//znP//5z3/+85///Oc///nP/9cC"
 
 
 def toml_string(value: str) -> str:
@@ -150,8 +150,8 @@ def build(root: Path, spec: Path) -> None:
         encoding="utf-8",
     )
     (figure_dir / "literature-landscape.webp").write_bytes(base64.b64decode(LANDSCAPE_WEBP))
-    write_rgb_png(figure_dir / "literature-landscape-alt.png", 300, 180)
-    write_rgb_png(figure_dir / "literature-portrait.png", 140, 300, portrait=True)
+    write_rgb_png(figure_dir / "literature-landscape-alt.png", 1660, 1130)
+    write_rgb_png(figure_dir / "literature-portrait.png", 1000, 1660, portrait=True)
 
     lines = [
         'schema_version = "0.1"',
@@ -161,7 +161,7 @@ def build(root: Path, spec: Path) -> None:
         "",
         "[project]",
         'flow_name = "taffish-report-render"',
-        'flow_version = "0.3.2-r1"',
+        'flow_version = "0.3.3-r1"',
         'analysis_mode = "component-structured-notes-report"',
         'title.en = "0. Structured explanation and responsive overflow stress report"',
         'title.zh = "0. 结构化说明与响应式溢出压力报告"',
@@ -337,17 +337,17 @@ def build(root: Path, spec: Path) -> None:
             "note_zh": "这段显式业务导语必须保留在结构化说明上方。",
             "caption_en": "The portrait image is complete and is never cropped to fill the stretched image region.",
             "caption_zh": "纵图完整显示，不会为了填满等高图片区而被裁切。",
-            "zoom": False,
+            "zoom": True,
         },
         {
-            "id": "media-stack-landscape",
+            "id": "media-compact-landscape",
             "image": "03_results/figures/literature-landscape-alt.png",
-            "title_en": "1.5 Explicit backward-compatible stack landscape",
-            "title_zh": "1.5 显式向后兼容 stack 横图",
+            "title_en": "1.5 Explicit compact PNG landscape",
+            "title_zh": "1.5 显式 compact PNG 横图",
             "image_position": "left",
             "ratio": 0.52,
             "gap": "compact",
-            "media_note_layout": "stack",
+            "media_note_layout": "compact",
             "zoom": True,
         },
     ]

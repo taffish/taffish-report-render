@@ -81,6 +81,9 @@
       payload、`tests/test-real-run-out/`、`tests/smoke-out/` 和 `target/` 产物必须在
       `.gitignore` 中忽略，不能随 app 发布提交。
 - [ ] fixture 内部路径应相对于 fixture root；renderer 测试不依赖维护者本机绝对路径。
+- [ ] ignored 的外部真实 fixture 必须有提交到仓库的确定性准备入口；准备过程应校验输入、
+      只写 ignored 输出、清除维护者绝对路径并记录输入/输出 SHA-256。不能把一次手工复制、
+      已清理的本地目录或不可恢复的临时 `report.toml` 当作 publish-ready 证据。
 - [ ] 真实 flow fixture 至少覆盖当前维护的全部 flow 报告家族：NGS QC、BAM QC、
       phylogeny、RNA-seq 有参、RNA-seq 无参和 Chengdu Yuanda report 12；
       不能因为最近只修改了某个组件就只保留其中一个真实报告输出。
@@ -316,7 +319,7 @@
 - [ ] 响应式压力 fixture 覆盖 300–600 字中文、1000–1500 字英文、六条双语列表、SHA64、
       accession/run ID、URL-like 与无空格长串，以及 numbered section/component、
       wide/media/table/workflow/technical appendix。
-- [ ] 固定视口矩阵覆盖 `1600x1000`、`1280x800` 和 `390x844`；media 还必须用真实组件宽度
+- [ ] 固定视口矩阵覆盖 `1600x1000`、`1280x900` 和 `390x844`；media 还必须用真实组件宽度
       精确覆盖 `901/900/621/620px`，并逐项检查 zh/en、200% 缩放和 print/PDF；`901px`
       保持图文双栏，`900px` 及以下图片在前，`621px` compact notes 保持两列，`620px`
       及以下变成单列。
@@ -355,8 +358,10 @@
       非图片 MIME 数量为 0，并逐项核对 sidecar 状态。
 - [ ] `component-structured-notes-report` 覆盖长双语段落/列表、固定 kinds、恶意文本转义、
       migrate/normalized/explain 保留，以及 wide/media/table/workflow/appendix 响应式压力路径；
-      同时包含真实 WebP、横向 PNG、竖向 PNG，覆盖 auto/stack/compact、0/3/4/5 条边界、
-      显式 note/caption、缺省 fallback、zoom 开关和已移除 kind icon 的 DOM 断言。
+      同时包含 `2500x2101` WebP 横图、`1660x1130` PNG 横图和 `1000x1660` PNG 竖图，
+      三张图均走 compact、五条双语说明、lightbox 和 raw link；另由 smoke/unit 覆盖
+      auto/stack/compact、0/3/4/5 条边界、显式 note/caption、缺省 fallback 和已移除
+      kind icon 的 DOM 断言。
 - [ ] 生成的 fixture 报告在视觉和能力上不低于复制来的 baseline 或来源路径中记录的现有报告。
 - [ ] 记录回归输出体量；接近 GitHub 50 MB 建议线的报告需要显式 review。
 
@@ -396,7 +401,9 @@
       图片裁切或按钮丢失；container query 与 viewport fallback 必须同时存在；
       `grid`、`wide` 历史 fixture 必须同时回归，打印样式不得切断单张 media 卡片。
 - [ ] compact 图/文同排时自然等高，但不得用固定 card height、图片裁切、绝对定位或
-      `overflow: hidden` 实现；print 强制单列且标题、图片、说明保持阅读顺序。
+      `overflow: hidden` 实现；compact 单列图片必须自然宽度居中、`max-width: 100%` 且
+      `max-height: min(720px, 85vh)`，不能把纵图放大到容器列宽；两列说明卡只在同行内
+      等高。print 强制单列、图片使用 `180mm` 上限，标题、图片、说明保持阅读顺序。
 - [ ] 大图 lightbox 打开时必须锁住背后报告页面滚动；在弹层、图片或已适配窗口状态下滚轮
       不应导致背景页面上下滚动，放大后滚轮只作用于弹层内图片滚动区域。
 - [ ] `interactive_plot` 只能用固定组件和 TOML 字段声明，不允许 flow 私自写 Plotly/ECharts

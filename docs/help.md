@@ -1,4 +1,4 @@
-taffish-report-render 0.3.2-r1
+taffish-report-render 0.3.3-r1
 
 Usage:
   taf-taffish-report-render COMMAND [OPTIONS]
@@ -56,6 +56,7 @@ Plot layouts:
   plot_card supports grid, wide, and responsive media layouts.
   media_note_layout auto keeps 0-3 note items stacked and compacts 4 or more.
   Compact media folds at component widths 900px and 620px.
+  Folded portrait images stay centered at natural width with a screen cap.
   PNG, JPEG, WebP, and SVG use deterministic renderer-owned MIME mappings.
   See the component manual for validated media ratios and alignment fields.
 

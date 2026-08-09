@@ -1,2 +1,2 @@
-<container:ghcr.io/taffish/taffish-report-render:0.3.2-r1>
+<container:ghcr.io/taffish/taffish-report-render:0.3.3-r1>
 report-render ::*ARGV*::

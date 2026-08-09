@@ -20,10 +20,10 @@ Package identity:
 
 - name: `taffish-report-render`
 - command: `taf-taffish-report-render`
-- TAFFISH version: `0.3.2-r1`
+- TAFFISH version: `0.3.3-r1`
 - kind: `tool`
-- image candidate: `ghcr.io/taffish/taffish-report-render:0.3.2-r1`
-- runtime identity: `taffish-report-render 0.3.2-r1`
+- image candidate: `ghcr.io/taffish/taffish-report-render:0.3.3-r1`
+- runtime identity: `taffish-report-render 0.3.3-r1`
 - native platforms: `linux/amd64`, `linux/arm64`
 
 The report spec is the only structural configuration input. Users do not write
@@ -212,7 +212,11 @@ surfaces keep intentional internal scrolling. Media layout responds to the
 component width, not only the viewport: compact cards fold their image/copy
 columns at `900px`, compact note items become one column at `620px`, and narrow
 navigation becomes a single readable column. Viewport-query fallbacks preserve
-the same boundaries where container queries are unavailable.
+the same boundaries where container queries are unavailable. Once a compact
+card folds, its image keeps natural width, remains centered, and is capped at
+`min(720px, 85vh)` rather than stretching a portrait figure to the full content
+column. Two-column structured-note cards align within each row, and print uses
+a stable natural-width `180mm` image cap.
 
 Use `taf-taffish-report-render component-doc COMPONENT` for concise CLI field
 documentation, or read the full

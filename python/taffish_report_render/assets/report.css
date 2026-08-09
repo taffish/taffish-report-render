@@ -1457,11 +1457,13 @@ h3 {
 
 .plot-media-note-compact .plot-media-copy .structured-note {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
+  align-items: stretch;
 }
 
 .plot-media-note-compact .structured-note-item {
   grid-template-columns: minmax(0, 1fr);
+  align-self: stretch;
+  box-sizing: border-box;
   align-content: start;
   gap: 7px;
 }
@@ -1490,9 +1492,19 @@ h3 {
       "copy";
   }
 
-  .plot-media-note-compact .plot-media-image,
-  .plot-media-note-compact .plot-image-button {
+  .plot-media-note-compact .plot-media-image {
+    display: grid;
+    place-items: center;
     height: auto;
+    min-height: 0;
+  }
+
+  .plot-media-note-compact .plot-image-button {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: auto;
+    min-height: 0;
   }
 
   .plot-card-media .plot-media-image img {
@@ -1501,8 +1513,13 @@ h3 {
   }
 
   .plot-card-media.plot-media-note-compact .plot-media-image img {
+    width: auto;
+    max-width: 100%;
     height: auto;
-    max-height: none;
+    max-height: min(720px, 85vh);
+    margin-inline: auto;
+    object-fit: contain;
+    object-position: center;
   }
 }
 
@@ -1537,14 +1554,29 @@ h3 {
         "copy";
     }
 
-    .plot-media-note-compact .plot-media-image,
-    .plot-media-note-compact .plot-image-button {
+    .plot-media-note-compact .plot-media-image {
+      display: grid;
+      place-items: center;
       height: auto;
+      min-height: 0;
+    }
+
+    .plot-media-note-compact .plot-image-button {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: auto;
+      min-height: 0;
     }
 
     .plot-card-media.plot-media-note-compact .plot-media-image img {
+      width: auto;
+      max-width: 100%;
       height: auto;
-      max-height: none;
+      max-height: min(720px, 85vh);
+      margin-inline: auto;
+      object-fit: contain;
+      object-position: center;
     }
   }
 
@@ -3675,17 +3707,33 @@ code {
       "copy";
   }
 
-  .plot-media-note-compact .plot-media-image,
-  .plot-media-note-compact .plot-image-button {
+  .plot-media-note-compact .plot-media-image {
+    display: grid;
+    place-items: center;
     height: auto;
+    min-height: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .plot-media-note-compact .plot-image-button {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: auto;
+    min-height: 0;
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
   .plot-card-media.plot-media-note-compact .plot-media-image img {
+    width: auto;
+    max-width: 100%;
     height: auto;
     max-height: 180mm;
     margin-inline: auto;
+    object-fit: contain;
+    object-position: center;
   }
 
   .plot-card-media .plot-media-head {

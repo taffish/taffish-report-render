@@ -14,8 +14,31 @@ report="$outdir/04_reports/taffish_report.html"
 rm -rf "$render_root"
 mkdir -p "$render_root"
 
+# Interface smoke uses explicit test-only runtime markers. Generate them inside
+# this run's disposable output tree so a clean checkout never depends on an
+# ignored testdata/runtime payload left by an earlier session.
+runtime_fixture_root="$render_root/runtime-fixtures"
+mkdir -p "$runtime_fixture_root"
+cat > "$runtime_fixture_root/ngl-test-shim.js" <<'JS'
+/* TAFFISH_NGL_TEST_SHIM: interface-smoke only; never valid for production reports. */
+window.NGL = window.NGL || {
+  Stage: function () {
+    this.loadFile = function () { return Promise.resolve({ addRepresentation: function () {}, autoView: function () {} }); };
+    this.handleResize = function () {};
+  }
+};
+JS
+cat > "$runtime_fixture_root/igv-test-shim.js" <<'JS'
+/* TAFFISH_IGV_TEST_SHIM: interface-smoke only; never valid for production reports. */
+window.igv = window.igv || { createBrowser: function () { return Promise.resolve({}); } };
+JS
+smoke_fixture_root="$render_root/fixture-inputs"
+python3 "$app_root/tests/build-smoke-fixtures.py" --outdir "$smoke_fixture_root"
+ngs_fixture_root="$smoke_fixture_root/ngs-qc"
+phylogeny_fixture_root="$smoke_fixture_root/phylogeny"
+
 echo "[SMOKE] version and components"
-"$renderer" --version | grep -Fx "taffish-report-render 0.3.2-r1" >/dev/null
+"$renderer" --version | grep -Fx "taffish-report-render 0.3.3-r1" >/dev/null
 "$renderer" components | grep -F "native_subreport" >/dev/null
 "$renderer" components | grep -F "code_file" >/dev/null
 "$renderer" components | grep -F "structure_viewer" >/dev/null
@@ -303,7 +326,7 @@ language_default = "zh"
 
 [project]
 flow_name = "media-layout-regression"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "component-regression"
 title.en = "Media Layout Regression"
 title.zh = "媒体布局回归测试"
@@ -842,7 +865,7 @@ label.zh = "Tiny 模型"
 TOML
 "$renderer" validate-spec --spec "$render_root/structure/report-ngl.toml" --root "$render_root/structure"
 TAFFISH_REPORT_RENDER_ALLOW_RUNTIME_SHIMS=1 \
-TAFFISH_REPORT_RENDER_NGL_JS="$app_root/testdata/runtime/ngl-test-shim.js" \
+TAFFISH_REPORT_RENDER_NGL_JS="$runtime_fixture_root/ngl-test-shim.js" \
 "$renderer" render \
   --spec "$render_root/structure/report-ngl.toml" \
   --root "$render_root/structure" \
@@ -892,7 +915,7 @@ language_default = "zh"
 
 [project]
 flow_name = "bio-viewer-smoke"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "bio-viewers"
 title.zh = "生信浏览器组件测试"
 title.en = "Bio Viewer Component Smoke"
@@ -942,7 +965,7 @@ url = "https://example.invalid/tracks/example.bed"
 TOML
 "$renderer" validate-spec --spec "$render_root/bio/report.toml" --root "$render_root/bio"
 TAFFISH_REPORT_RENDER_ALLOW_RUNTIME_SHIMS=1 \
-TAFFISH_REPORT_RENDER_IGV_JS="$app_root/testdata/runtime/igv-test-shim.js" \
+TAFFISH_REPORT_RENDER_IGV_JS="$runtime_fixture_root/igv-test-shim.js" \
 "$renderer" render \
   --spec "$render_root/bio/report.toml" \
   --root "$render_root/bio" \
@@ -981,7 +1004,7 @@ language_default = "zh"
 
 [project]
 flow_name = "policy-smoke"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "native-subreport-policy"
 title.zh = "子报告策略测试"
 title.en = "Subreport Policy Smoke"
@@ -1034,13 +1057,13 @@ grep -F '打开内嵌报告' "$render_root/policy/04_reports/report.html" >/dev/
 grep -F '打开源 HTML' "$render_root/policy/04_reports/report.html" >/dev/null
 
 echo "[SMOKE] validate fixture spec"
-"$renderer" validate-spec --spec "$app_root/testdata/fixtures/ngs-qc/report.toml"
-"$renderer" validate-spec --spec "$app_root/testdata/fixtures/phylogeny/report.toml"
+"$renderer" validate-spec --spec "$ngs_fixture_root/report.toml"
+"$renderer" validate-spec --spec "$phylogeny_fixture_root/report.toml"
 
 echo "[SMOKE] render NGS QC fixture"
 "$renderer" render \
-  --spec "$app_root/testdata/fixtures/ngs-qc/report.toml" \
-  --root "$app_root/testdata/fixtures/ngs-qc" \
+  --spec "$ngs_fixture_root/report.toml" \
+  --root "$ngs_fixture_root" \
   --out "$report" \
   --force \
   --validate
@@ -1067,8 +1090,8 @@ grep -F 'data-open-subreport="multiqc"' "$report" >/dev/null
 grep -F 'openEmbeddedSubreportWindow' "$report" >/dev/null
 grep -F 'window.open("about:blank", "_blank")' "$report" >/dev/null
 grep -F 'data-subreport-loading' "$report" >/dev/null
-grep -F 'testdata/fixtures/ngs-qc/03_results/html/multiqc_report.html"' "$report" >/dev/null
-grep -F 'testdata/fixtures/ngs-qc/03_results/seqkit/clean_fastq_stats.tsv"' "$report" >/dev/null
+grep -F 'fixture-inputs/ngs-qc/03_results/html/multiqc_report.html"' "$report" >/dev/null
+grep -F 'fixture-inputs/ngs-qc/03_results/seqkit/clean_fastq_stats.tsv"' "$report" >/dev/null
 grep -F '打开内嵌报告' "$report" >/dev/null
 grep -F '打开源 HTML' "$report" >/dev/null
 grep -F "table-card table-preview-card" "$report" >/dev/null
@@ -1179,8 +1202,8 @@ echo "[SMOKE] render phylogeny fixture with tree and alignment viewers"
 phylo_out="$render_root/phylogeny"
 phylo_report="$phylo_out/04_reports/taffish_report.html"
 "$renderer" render \
-  --spec "$app_root/testdata/fixtures/phylogeny/report.toml" \
-  --root "$app_root/testdata/fixtures/phylogeny" \
+  --spec "$phylogeny_fixture_root/report.toml" \
+  --root "$phylogeny_fixture_root" \
   --out "$phylo_report" \
   --force \
   --validate
@@ -1195,7 +1218,7 @@ grep -F 'id="trimmed-alignment"' "$phylo_report" >/dev/null
 grep -F 'data-copy-code' "$phylo_report" >/dev/null
 grep -F 'sample_A:0.0123' "$phylo_report" >/dev/null
 grep -F 'human_P99999_Homo' "$phylo_report" >/dev/null
-grep -F 'testdata/fixtures/phylogeny/03_results/tree/plots/tree.png"' "$phylo_report" >/dev/null
+grep -F 'fixture-inputs/phylogeny/03_results/tree/plots/tree.png"' "$phylo_report" >/dev/null
 grep -F $'newick\ttree-inline\t03_results/tree/tree.nwk' "$phylo_out/04_reports/report_files.tsv" >/dev/null
 grep -F $'alignment\ttrimmed-alignment\t03_results/alignment/trimmed.fa' "$phylo_out/04_reports/report_files.tsv" >/dev/null
 grep -F $'text\ttree-newick\t03_results/tree/tree.nwk' "$phylo_out/04_reports/report_files.tsv" >/dev/null

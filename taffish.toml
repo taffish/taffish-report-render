@@ -1,7 +1,7 @@
 [package]
 name = "taffish-report-render"
 kind = "tool"
-version = "0.3.2"
+version = "0.3.3"
 release = 1
 license = "Apache-2.0"
 main = "src/main.taf"
@@ -17,7 +17,7 @@ pipe = true
 command_mode = false
 
 [container]
-image = "ghcr.io/taffish/taffish-report-render:0.3.2-r1"
+image = "ghcr.io/taffish/taffish-report-render:0.3.3-r1"
 dockerfile = "docker/Dockerfile"
 build_platforms = "linux/amd64,linux/arm64"
 
@@ -31,4 +31,4 @@ description = "Compile structured local scientific results into standalone bilin
 backend = "docker"
 timeout = 60
 exist = ["report-render", "python3"]
-test = ["report-render --version | grep -Fx 'taffish-report-render 0.3.2-r1' >/dev/null", "python3 -c 'from pathlib import Path; from taffish_report_render.cli import mime_type_for_path; expected={\".png\":\"image/png\",\".jpg\":\"image/jpeg\",\".jpeg\":\"image/jpeg\",\".webp\":\"image/webp\",\".svg\":\"image/svg+xml\"}; assert all(mime_type_for_path(Path(\"figure\"+suffix)) == mime for suffix,mime in expected.items())'", "report-render components | grep -F native_subreport >/dev/null", "report-render components | grep -F native_subreport_collection >/dev/null", "report-render components | grep -F structure_viewer >/dev/null", "report-render components | grep -F tree_viewer >/dev/null", "report-render components | grep -F sequence_alignment >/dev/null", "report-render components | grep -F genome_browser >/dev/null", "report-render schema | grep -F '\"native_subreport_collection\"' >/dev/null", "report-render schema | grep -F '\"structure_viewer\"' >/dev/null", "report-render schema | grep -F '\"tree_viewer\"' >/dev/null", "report-render schema | grep -F '\"sequence_alignment\"' >/dev/null", "report-render schema | grep -F '\"genome_browser\"' >/dev/null", "report-render schema | grep -F '\"media_image_ratio\"' >/dev/null", "report-render schema | grep -F '\"media_note_layout\"' >/dev/null", "report-render schema | grep -F '\"note_items\"' >/dev/null", "report-render schema | grep -F '\"boundary\"' >/dev/null", "tmp=\"$(mktemp -d)\"; report-render new --outdir \"$tmp/example\" --force >/dev/null; report-render render --spec \"$tmp/example/report.toml\" --root \"$tmp/example\" --out \"$tmp/example/04_reports/report.html\" --force --validate >/dev/null; test -s \"$tmp/example/04_reports/report.html\"; grep -F 'data-template=\"taffish-flow-report\"' \"$tmp/example/04_reports/report.html\" >/dev/null"]
+test = ["report-render --version | grep -Fx 'taffish-report-render 0.3.3-r1' >/dev/null", "python3 -c 'from pathlib import Path; from taffish_report_render.cli import mime_type_for_path; expected={\".png\":\"image/png\",\".jpg\":\"image/jpeg\",\".jpeg\":\"image/jpeg\",\".webp\":\"image/webp\",\".svg\":\"image/svg+xml\"}; assert all(mime_type_for_path(Path(\"figure\"+suffix)) == mime for suffix,mime in expected.items())'", "report-render components | grep -F native_subreport >/dev/null", "report-render components | grep -F native_subreport_collection >/dev/null", "report-render components | grep -F structure_viewer >/dev/null", "report-render components | grep -F tree_viewer >/dev/null", "report-render components | grep -F sequence_alignment >/dev/null", "report-render components | grep -F genome_browser >/dev/null", "report-render schema | grep -F '\"native_subreport_collection\"' >/dev/null", "report-render schema | grep -F '\"structure_viewer\"' >/dev/null", "report-render schema | grep -F '\"tree_viewer\"' >/dev/null", "report-render schema | grep -F '\"sequence_alignment\"' >/dev/null", "report-render schema | grep -F '\"genome_browser\"' >/dev/null", "report-render schema | grep -F '\"media_image_ratio\"' >/dev/null", "report-render schema | grep -F '\"media_note_layout\"' >/dev/null", "report-render schema | grep -F '\"note_items\"' >/dev/null", "report-render schema | grep -F '\"boundary\"' >/dev/null", "tmp=\"$(mktemp -d)\"; report-render new --outdir \"$tmp/example\" --force >/dev/null; report-render render --spec \"$tmp/example/report.toml\" --root \"$tmp/example\" --out \"$tmp/example/04_reports/report.html\" --force --validate >/dev/null; test -s \"$tmp/example/04_reports/report.html\"; grep -F 'data-template=\"taffish-flow-report\"' \"$tmp/example/04_reports/report.html\" >/dev/null"]

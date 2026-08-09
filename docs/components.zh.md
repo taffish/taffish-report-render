@@ -449,9 +449,13 @@ media 专用字段：
 - 断点按组件宽度而非只按 viewport 判断：`900px` 以上保持图文双栏，`900px` 及以下
   始终先图后文；`620px` 及以下 compact 条目改为单列；不支持 container query 的浏览器
   使用同边界 viewport fallback；
+- compact 卡片在 `900px` 折叠后，图片按自然宽度居中并限制在组件内，屏幕最大高度为
+  `min(720px, 85vh)`；纵图不会被放大到占满正文列宽；
 - 窄屏忽略桌面比例，不产生横向滚动；图片保持原始比例并使用 `object-fit: contain`；
 - compact 的图片栏和说明栏在同一行自然等高，但不使用固定卡片高度、裁切、绝对定位或
   `overflow: hidden`；`media_vertical_align` 继续控制 `stack`，compact 由等高契约接管；
+- compact 两列结构化说明卡只在各自所在行内等高；打印时图片保持自然宽度、居中，并使用
+  确定的 `180mm` 上限，不依赖 viewport 高度；
 - 长中英文标题、长链接和连续英文标识符必须在文字栏内换行；
 - 未识别枚举、字符串/NaN/非有限比例、越界比例或在非 media 布局中声明 media 专用字段，
   都会在验证/lint 阶段失败。

@@ -18,6 +18,7 @@ phylogeny_source="${TAFFISH_REPORT_RENDER_PHYLOGENY_ROOT:-$hub_root/repos/apps/b
 rnaseq_reference_source="${TAFFISH_REPORT_RENDER_RNASEQ_REFERENCE_ROOT:-$hub_root/repos/apps/bio/flows/rna-seq/example-reports/yeast-standard-report}"
 rnaseq_denovo_source="${TAFFISH_REPORT_RENDER_RNASEQ_DENOVO_ROOT:-$hub_root/repos/apps/bio/flows/rna-seq/example-reports/yeast-denovo-standard-report}"
 chengdu_yuanda_report12_source="${TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_ROOT:-$app_root/testdata/fixtures/chengdu-yuanda-report12}"
+chengdu_yuanda_report12_raw_source="${TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_RAW_ROOT:-}"
 
 clean=false
 run_checker=true
@@ -44,7 +45,12 @@ The first group renders from corresponding real flow output trees, not from a
 trimmed "normal" fixture. RNA-seq reference and de novo scenarios use the public
 yeast example report trees and embed the full declared HTML/QC payload set.
 The Chengdu Yuanda report-12 structure fixture is part of the default regression
-set. Browser runtimes such as NGL and IGV must already be vendored in the
+set. A previously prepared fixture can be supplied with
+TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_ROOT. Otherwise set
+TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_RAW_ROOT to the archived
+pufa_structure_comparison_all_domains_local_complete result root; the test will
+deterministically prepare a relative-path fixture under its ignored output tree.
+Browser runtimes such as NGL and IGV must already be vendored in the
 renderer package/image. The normal report interface is still TOML plus a
 results root; test-real-run never downloads JavaScript runtime files and never
 uses NGL/IGV test shims. Missing real runtime is a hard failure.
@@ -64,6 +70,8 @@ Options:
   --rnaseq-denovo-source DIR      Source root for the RNA-seq de novo full report.
   --chengdu-yuanda-report12-source DIR
                                   Source root for the Chengdu Yuanda report-12 full structure report fixture.
+  --chengdu-yuanda-report12-raw-source DIR
+                                  Archived scientific result root to prepare when no ready fixture is available.
   --no-checker                    Skip the shared flow-report structural checker.
   --no-validate                   Skip renderer --validate after render.
   -h, --help                      Show this help.
@@ -144,6 +152,14 @@ while [ "$#" -gt 0 ]; do
                 exit 2
             fi
             chengdu_yuanda_report12_source="$2"
+            shift 2
+            ;;
+        --chengdu-yuanda-report12-raw-source)
+            if [ "$#" -lt 2 ]; then
+                echo "ERROR: --chengdu-yuanda-report12-raw-source requires a directory" >&2
+                exit 2
+            fi
+            chengdu_yuanda_report12_raw_source="$2"
             shift 2
             ;;
         --no-checker)
@@ -295,6 +311,49 @@ if [ "$clean" = true ]; then
     rm -rf "$out_root"
 fi
 mkdir -p "$flow_out_root" "$component_out_root"
+
+prepare_chengdu_yuanda_report12_source() {
+    local fixture
+    local needed=false
+    for fixture in "${fixtures[@]}"; do
+        case "$fixture" in
+            chengdu-yuanda-report12|component-media-layout-report|component-ngl-native-report)
+                needed=true
+                ;;
+        esac
+    done
+    if [ "$needed" = false ]; then
+        return
+    fi
+    if [ -s "$chengdu_yuanda_report12_source/report.toml" ]; then
+        echo "[REAL] Chengdu Yuanda prepared fixture: $chengdu_yuanda_report12_source"
+        return
+    fi
+    if [ -z "$chengdu_yuanda_report12_raw_source" ]; then
+        cat >&2 <<EOF
+ERROR: Chengdu Yuanda report-12 prepared fixture is unavailable:
+  $chengdu_yuanda_report12_source
+
+Provide either a prepared fixture root:
+  TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_ROOT=/path/to/prepared-fixture
+
+or the archived scientific result root; test-real-run will prepare the fixture
+deterministically inside its ignored output directory:
+  TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_RAW_ROOT=/path/to/pufa_structure_comparison_all_domains_local_complete
+
+Preparation helper:
+  tools/prepare-chengdu-yuanda-report12-fixture.py
+EOF
+        exit 1
+    fi
+    chengdu_yuanda_report12_source="$out_root/.prepared-inputs/chengdu-yuanda-report12"
+    echo "[REAL] prepare Chengdu Yuanda fixture from: $chengdu_yuanda_report12_raw_source"
+    python3 "$app_root/tools/prepare-chengdu-yuanda-report12-fixture.py" \
+        --source-root "$chengdu_yuanda_report12_raw_source" \
+        --outdir "$chengdu_yuanda_report12_source"
+}
+
+prepare_chengdu_yuanda_report12_source
 
 printf 'category\tfixture\tsource_root\treport\tmanifest\tfiles_index\tembedded_html_index\n' > "$index"
 printf 'fixture\tsource_root\treport\tmanifest\tfiles_index\tembedded_html_index\n' > "$flow_index"
@@ -1207,7 +1266,7 @@ language_default = "zh"
 
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "reference"
 title.zh = "TAFFISH RNA-seq 有参分析完整报告"
 title.en = "TAFFISH RNA-seq full reference report"
@@ -1407,7 +1466,7 @@ language_default = "zh"
 
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "denovo"
 title.zh = "TAFFISH RNA-seq 无参分析完整报告"
 title.en = "TAFFISH RNA-seq full de novo report"
@@ -1576,10 +1635,10 @@ render_chengdu_yuanda_report12() {
         "$source_root/03_results/tables/pufa_structure_comparison_all_domains.overlay_pdb_manifest.tsv" \
         "$source_root/03_results/tables/pufa_structure_comparison_all_domains.overlay_priority_summary.tsv" \
         "$source_root/03_results/tables/pufa_structure_comparison_all_domains.foldseek_structural_similarity.tsv" \
-        "$source_root/03_results/figures/pufa_structure_comparison_all_domains.fig3_foldseek_alntmscore.png" \
-        "$source_root/03_results/figures/pufa_structure_comparison_all_domains.fig3_foldseek_identity.png" \
+        "$source_root/03_results/figures/fig3_foldseek_alntmscore.svg" \
+        "$source_root/03_results/figures/fig3_foldseek_identity.svg" \
         "$source_root/03_results/structure_figures/pufa_structure_comparison_all_domains.target_schizochytrium_company_OrfB_AT_MAT_AT_MAT_1.target_epa_dha_overlay.png" \
-        "$source_root/03_results/structure_figures/pufa_structure_comparison_all_domains.target_schizochytrium_company_OrfB_AT_MAT_AT_MAT_1.motif_on_structure.png" \
+        "$source_root/03_results/structure_figures/pufa_structure_comparison_all_domains.target_schizochytrium_company_OrfB_AT_MAT_AT_MAT_1.motif_site_track.svg" \
         "$source_root/03_results/overlay_pdb/target_schizochytrium_company_OrfB_AT_MAT_AT_MAT_1/target.pdb" \
         "$source_root/03_results/overlay_pdb/target_schizochytrium_company_OrfB_AT_MAT_AT_MAT_1/epa_EPA_shewanella_pneumatophori_scrc2738_PfaB_AT_MAT_AT_MAT_1.aligned.pdb" \
         "$source_root/03_results/overlay_pdb/target_schizochytrium_company_OrfB_AT_MAT_AT_MAT_1/dha_DHA_aurantiochytrium_l_bl10_OrfB_AT_MAT_AT_MAT_1.aligned.pdb"
@@ -1587,7 +1646,7 @@ render_chengdu_yuanda_report12() {
         require_file "$required"
     done
 
-    render_from_spec "$fixture" "$source_root" "$spec" 25000000 0
+    render_from_spec "$fixture" "$source_root" "$spec" 20000000 0
     local report="$(fixture_work_dir "$fixture")/04_reports/taffish_report.html"
     local files_index="$(fixture_work_dir "$fixture")/04_reports/report_files.tsv"
     grep -F "Chengdu Yuanda PUFA Structure Comparison Report 12" "$report" >/dev/null
@@ -1605,7 +1664,7 @@ render_chengdu_yuanda_report12() {
     grep -F "EPA | S_pneumatophori_scrc2738 | PfaB AT/MAT" "$report" >/dev/null
     grep -F "DHA | aurantiochytrium_l_bl10 | OrfB AT/MAT" "$report" >/dev/null
     grep -F "pufa_structure_comparison_all_domains.foldseek_structural_similarity.tsv" "$report" >/dev/null
-    grep -F "pufa_structure_comparison_all_domains.fig3_foldseek_identity.png" "$files_index" >/dev/null
+    grep -F "fig3_foldseek_identity.svg" "$files_index" >/dev/null
     grep -F "target_schizochytrium_company_OrfB_AT_MAT_AT_MAT_1.target_epa_dha_overlay.png" "$files_index" >/dev/null
     grep -F "target_schizochytrium_company_OrfB_AT_MAT_AT_MAT_1/target.pdb" "$files_index" >/dev/null
     grep -F $'runtime\t' "$files_index" >/dev/null
@@ -1654,7 +1713,7 @@ TSV
   <text x="80" y="70" font-family="Arial,sans-serif" font-size="32" fill="#0b2530">Embedded SVG plot</text>
 </svg>
 SVG
-    local native_html_source="$app_root/testdata/fixtures/ngs-qc/03_results/html/P1.fastp.html"
+    local native_html_source="$ngs_qc_source/03_results/fastp/P1.fastp.html"
     require_file "$native_html_source"
     cp "$native_html_source" "$source_root/03_results/html/native.html"
     cat > "$source_root/04_reports/methods.txt" <<'TEXT'
@@ -1667,7 +1726,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "component-regression-basic"
 title.en = "Basic component regression test"
 title.zh = "基础组件库测试"
@@ -1755,7 +1814,7 @@ render_component_media_layout() {
     local spec="$fixture_dir/report.full.toml"
     local phylogeny_image="$phylogeny_source/03_results/tree/plots/rectangular/tree.png"
     local rnaseq_image="$rnaseq_reference_source/03_results/collected_plots/de.heatmap.png"
-    local structure_image="$chengdu_yuanda_report12_source/03_results/figures/pufa_structure_comparison_all_domains.fig2_structure_confidence.png"
+    local structure_image="$chengdu_yuanda_report12_source/03_results/figures/fig2_structure_confidence.svg"
 
     require_file "$phylogeny_image"
     require_file "$rnaseq_image"
@@ -1780,7 +1839,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "component-media-layout-report"
 title.en = "Scientific media-layout regression"
 title.zh = "科研图文 media 布局回归"
@@ -2013,22 +2072,49 @@ render_component_structured_notes() {
     grep -F '@media (max-width: 680px)' "$report" >/dev/null
     grep -F '@media print' "$report" >/dev/null
     grep -F '.plot-card-media .plot-media-head {' "$report" >/dev/null
+    grep -F 'max-height: min(720px, 85vh);' "$report" >/dev/null
     grep -F 'max-height: 180mm;' "$report" >/dev/null
+    grep -F 'align-items: stretch;' "$report" >/dev/null
+    grep -F 'align-self: stretch;' "$report" >/dev/null
     grep -F 'break-after: avoid-page;' "$report" >/dev/null
     grep -F $'media-auto-webp\tmedia\t\tauto\tcompact\t5' "$layouts" >/dev/null
     grep -F $'media-compact-portrait\tmedia\tcompact\tcompact\tcompact\t5' "$layouts" >/dev/null
-    grep -F $'media-stack-landscape\tmedia\tstack\tstack\tstack\t5' "$layouts" >/dev/null
+    grep -F $'media-compact-landscape\tmedia\tcompact\tcompact\tcompact\t5' "$layouts" >/dev/null
     grep -F 'data-media-note-layout="compact"' "$report" >/dev/null
     grep -F 'data-media-note-layout-requested="auto"' "$report" >/dev/null
-    grep -F 'data-media-note-layout="stack"' "$report" >/dev/null
     grep -F 'class="plot-media-head"' "$report" >/dev/null
     grep -F 'class="plot-media-caption"' "$report" >/dev/null
     grep -F 'data:image/webp;base64,' "$report" >/dev/null
-    python3 - "$report" <<'PY'
+    python3 - "$report" "$source_root" <<'PY'
 from pathlib import Path
 import sys
 
 html = Path(sys.argv[1]).read_text(encoding="utf-8")
+source_root = Path(sys.argv[2])
+
+def png_dimensions(path):
+    payload = path.read_bytes()
+    if payload[:8] != b"\x89PNG\r\n\x1a\n" or payload[12:16] != b"IHDR":
+        raise SystemExit(f"invalid PNG fixture: {path}")
+    return int.from_bytes(payload[16:20], "big"), int.from_bytes(payload[20:24], "big")
+
+def webp_dimensions(path):
+    payload = path.read_bytes()
+    if payload[:4] != b"RIFF" or payload[8:12] != b"WEBP":
+        raise SystemExit(f"invalid WebP fixture: {path}")
+    if payload[12:16] == b"VP8L" and payload[20] == 0x2F:
+        bits = int.from_bytes(payload[21:25], "little")
+        return 1 + (bits & 0x3FFF), 1 + ((bits >> 14) & 0x3FFF)
+    raise SystemExit(f"unsupported WebP fixture encoding: {payload[12:16]!r}")
+
+figure_root = source_root / "03_results" / "figures"
+if webp_dimensions(figure_root / "literature-landscape.webp") != (2500, 2101):
+    raise SystemExit("WebP fixture must be 2500x2101")
+if png_dimensions(figure_root / "literature-landscape-alt.png") != (1660, 1130):
+    raise SystemExit("landscape PNG fixture must be 1660x1130")
+if png_dimensions(figure_root / "literature-portrait.png") != (1000, 1660):
+    raise SystemExit("portrait PNG fixture must be 1000x1660")
+
 auto_start = html.index('id="media-auto-webp"')
 auto_end = html.index('</figure>', auto_start)
 auto_card = html[auto_start:auto_end]
@@ -2041,13 +2127,21 @@ if auto_card.index('plot-media-image') > auto_card.index('plot-media-copy'):
 if 'An independent caption remains a caption' not in auto_card:
     raise SystemExit("independent compact caption was not preserved")
 
-portrait_start = html.index('id="media-compact-portrait"')
-portrait_end = html.index('</figure>', portrait_start)
-portrait_card = html[portrait_start:portrait_end]
+cards = {}
+for card_id in ("media-auto-webp", "media-compact-portrait", "media-compact-landscape"):
+    start = html.index(f'id="{card_id}"')
+    end = html.index('</figure>', start)
+    cards[card_id] = html[start:end]
+    if f'data-open-image="{card_id}"' not in cards[card_id]:
+        raise SystemExit(f"{card_id} is missing its lightbox trigger")
+    if 'target="_blank" rel="noopener"' not in cards[card_id]:
+        raise SystemExit(f"{card_id} is missing its raw-file link")
+    if 'data-media-note-item-count="5"' not in cards[card_id]:
+        raise SystemExit(f"{card_id} does not preserve five structured note items")
+
+portrait_card = cards["media-compact-portrait"]
 if 'This explicit business lead must remain' not in portrait_card:
     raise SystemExit("explicit compact business lead was not preserved")
-if 'data-open-image="media-compact-portrait"' in portrait_card:
-    raise SystemExit("zoom=false compact card unexpectedly has a lightbox trigger")
 PY
 }
 
@@ -2086,7 +2180,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "component-component-echarts-report"
 title.en = "ECharts interactive plot library test"
 title.zh = "ECharts 交互图组件库测试"
@@ -2180,7 +2274,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "component-component-tree-alignment-report"
 title.en = "Tree and alignment component regression test"
 title.zh = "树和多序列比对组件库测试"
@@ -2366,7 +2460,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "component-component-igv-report"
 title.en = "IGV genome browser library test"
 title.zh = "IGV 基因组浏览组件库测试"
@@ -2465,7 +2559,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.2-r1"
+flow_version = "0.3.3-r1"
 analysis_mode = "component-ngl-native-report"
 title.en = "Real NGL structure component regression"
 title.zh = "真实 NGL 结构组件回归"

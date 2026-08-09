@@ -27,7 +27,7 @@ fixtures/              本地忽略目录；维护者真实 fixture payload
 ```text
 <fixture>/
   report.toml         未来 renderer 实现使用的输入草案
-  00_reports/         报告级 summary/provenance 文件和小型 baseline
+  04_reports/         报告级 summary/provenance 文件和小型 baseline
   03_results/         真实报告所需图片、表格、PDB 或 native HTML report 输入
 ```
 
@@ -42,6 +42,10 @@ renderer 测试只需要足够数据证明固定报告组件、资产嵌入、na
 结构查看器、声明式多语言、导航和 standalone HTML 行为正确。`tests/smoke.sh`
 只做快速契约检查；`tests/test-real-run.sh` 同时跑真实 flow 报告复现和真实报告风格的
 组件回归报告。`test-real-run` 不使用 demo、假 viewer 或测试 shim 作为通过依据。
+快速 smoke 自己通过 `tests/build-smoke-fixtures.py` 在 `tests/smoke-out/` 中生成最小
+NGS-QC/phylogeny 输入和明确标记的 NGL/IGV interface shim；它不读取已忽略的
+`testdata/fixtures/` 或 `testdata/runtime/` 残留。shim 报告默认不能通过生产 HTML
+验证，只能在 smoke 的显式测试开关下用于接口检查。
 
 这些 fixture 还用于回归检查报告组件抽象本身：
 
@@ -50,8 +54,9 @@ renderer 测试只需要足够数据证明固定报告组件、资产嵌入、na
 - collection 组件只作为编译期便利写法，必须在测试中展开为普通 `plot_card`、
   `table_preview`、`code_file` 或 `native_subreport`，并写入 `report.normalized.json`；
 - `chengdu-yuanda-report12` 使用真实结构比较报告数据验证 `structure_viewer` 的 PDB asset
-  记录、内置轻量 3D trace viewer payload、静态 PyMOL 图和普通报告不默认嵌入重型 runtime
-  的边界；
+  记录、内置轻量 3D trace viewer payload、归档静态结构叠合图和普通报告不默认嵌入重型
+  runtime 的边界；fixture 准备器只从归档 TSV 派生测试用 SVG 摘要和 motif 位点轨迹，
+  不重跑或修改科学分析结果；
 - plot 图片可在单文件报告内放大查看，默认整图可见并可手动缩放；table preview
   使用页面内可折叠表格卡，完整表格在边界内直接进入固定高度二维滚动窗口；
 - 文件名、路径、长 ID 和表格值必须在底层组件内安全换行，不能溢出卡片边界；
@@ -123,6 +128,8 @@ component-ngl-native-report
 `component-structured-notes-report` 使用长双语科研叙述、六项双语列表、SHA-256、accession、
 run ID、URL 样式与无空格长串，覆盖全部 14 种固定 `note_items.kind`、恶意文本转义、
 normalize/migrate/explain 保留，以及 wide/media/table/workflow/技术附录的响应式和打印边界。
+其中三张 compact 正式图分别为 `2500x2101` WebP 横图、`1660x1130` PNG 横图和
+`1000x1660` PNG 竖图；每张图保留五条双语说明、lightbox 与 raw-file link。
 默认 full real-run 会在渲染前预检本轮选中场景需要的全部浏览器 runtime；如果 NGL 和
 IGV 同时缺失，脚本应同时报告这两个真实 runtime 缺口，不能只在第一个缺口处停止而让
 后续组件没有被检查。
@@ -154,7 +161,26 @@ TAFFISH_REPORT_RENDER_RNASEQ_DENOVO_ROOT=/path/to/yeast-denovo-standard-report \
 
 TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_ROOT=/path/to/report12-fixture \
   tests/test-real-run.sh --clean chengdu-yuanda-report12
+
+TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_RAW_ROOT=/path/to/pufa_structure_comparison_all_domains_local_complete \
+  tests/test-real-run.sh
 ```
+
+成都圆大原始结果树不提交到本 app 仓库。清理后的维护者环境应使用第二种方式：默认无参数
+real-run 会调用 `tools/prepare-chengdu-yuanda-report12-fixture.py`，把归档的 15 张真实 TSV、
+33 个 target/EPA/DHA aligned PDB 和 11 张真实静态叠合图准备到
+`tests/test-real-run-out/.prepared-inputs/chengdu-yuanda-report12/`。准备器同时：
+
+- 把 fixture 内部引用归一化为相对路径，并移除表格中的维护者绝对路径前缀；
+- 从真实 TSV 数值确定性生成 9 张 SVG 摘要和 11 张 motif 位点轨迹；
+- 生成 renderer 唯一结构入口 `report.toml`；
+- 写出 `fixture-preparation.json`，记录全部输入和输出文件的相对路径、字节数和 SHA-256；
+- 只使用 Python 标准库，不联网、不调用生信工具、PyMOL、浏览器或 renderer 私有 HTML
+  finalizer。
+
+如果已经有按同一合同准备好的 fixture，可继续使用
+`TAFFISH_REPORT_RENDER_CHENGDU_YUANDA_REPORT12_ROOT`。原始结果和 prepared fixture 都是
+ignored 的维护者测试资产；Git 仓库只提交准备器、测试和准备说明。
 
 默认输出：
 

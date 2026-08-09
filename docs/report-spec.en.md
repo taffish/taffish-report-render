@@ -65,7 +65,7 @@ Optional but recommended top-level fields:
 
 - `flow_name`: app or flow name, for example `rnaseq-standard-flow` or
   `taffish-report-render`.
-- `flow_version`: TAFFISH package version such as `0.3.2-r1`.
+- `flow_version`: TAFFISH package version such as `0.3.3-r1`.
 - `analysis_mode`: short mode label such as `reference`, `denovo`, `quality`,
   or `component-regression`.
 - `title`: localized report title.
