@@ -98,22 +98,7 @@ NOTE_ITEM_KINDS = (
     "provenance",
 )
 NOTE_ITEM_FIELDS = {"kind", "label", "body", "items"}
-NOTE_ITEM_ICONS = {
-    "summary": "S",
-    "question": "?",
-    "purpose": "P",
-    "input": "I",
-    "method": "M",
-    "elements": "E",
-    "reading": "R",
-    "observation": "O",
-    "result": "R",
-    "meaning": "M",
-    "boundary": "B",
-    "limitation": "L",
-    "next": "N",
-    "provenance": "V",
-}
+MEDIA_NOTE_LAYOUTS = ("auto", "stack", "compact")
 NOTE_LENGTH_WARN_LIMITS = {"zh": 240, "en": 700}
 IMAGE_MIME_TYPES = {
     ".png": "image/png",
@@ -211,6 +196,7 @@ COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
             "id", "type", "image", "title", "note", "caption", "zoom",
             "default_fit", "layout", "note_position", "image_position",
             "media_image_ratio", "media_vertical_align", "media_gap",
+            "media_note_layout",
         ],
     },
     "native_subreport": {
@@ -309,7 +295,7 @@ COMPONENT_DOCS: dict[str, str] = {
     "table_preview": "table_preview renders a TSV/CSV file as a compact preview and, within size limits, an in-place full table viewer with search, sorting, two-axis scrolling, cell expansion, copy support, and a visible component note above the table.",
     "code_file": "code_file embeds a small text artifact such as a Newick tree, short config, command snippet, or small JSON block, with an optional copy button.",
     "workflow_diagram": "workflow_diagram renders a linear workflow route from a TSV table. Paired step_en/step_zh, note_en/note_zh, and status_en/status_zh columns switch with the active report language; legacy step, flow, status, and outdir columns remain supported.",
-    "plot_card": "plot_card embeds a PNG/SVG/JPEG/WebP image as a data URI and supports a fit-to-window large-image viewer. layout supports grid, wide, and media; media adds a validated responsive image-and-explanation layout with controlled image position, ratio, alignment, and spacing.",
+    "plot_card": "plot_card embeds a PNG/SVG/JPEG/WebP image as a data URI and supports a fit-to-window large-image viewer. layout supports grid, wide, and media; media adds a component-width-responsive image-and-explanation layout. media_note_layout accepts auto, stack, or compact; auto selects compact for four or more structured note items.",
     "native_subreport": "native_subreport bundles a local program-generated HTML/QC report. embed_policy supports auto, always, and never; local multi-page bundles can use embed_linked_pages or pages.",
     "plot_collection": "plot_collection expands a TSV index into plot_card components. Use columns such as id, image/path/source, title_en, title_zh, note_en, and note_zh.",
     "table_collection": "table_collection expands a TSV index into table_preview components. Use columns such as id, source/path, title_en, title_zh, note_en, and note_zh.",
@@ -674,7 +660,6 @@ def render_structured_note_items(owner: dict[str, Any]) -> str:
         rendered_items.append(
             f'<div class="structured-note-item structured-note-kind-{escape(kind)}" data-note-kind="{escape(kind, quote=True)}">'
             '<dt>'
-            f'<span class="structured-note-kind-icon" aria-hidden="true">{escape(NOTE_ITEM_ICONS[kind])}</span>'
             f'<span class="structured-note-label">{i18n(item.get("label"))}</span>'
             '</dt>'
             f'<dd>{body_html}{list_html}</dd>'
@@ -696,14 +681,29 @@ def render_note_block(
     fallback: Any = None,
     classes: str = "component-note-block",
 ) -> str:
+    items_html = render_structured_note_items(owner)
     lead = owner.get("note")
-    if lead is None:
+    if lead is None and not items_html:
         lead = fallback
     lead_html = f'<p class="structured-note-lead">{i18n(lead)}</p>' if lead else ""
-    items_html = render_structured_note_items(owner)
     if not lead_html and not items_html:
         return ""
     return f'<div class="{escape(classes)}">{lead_html}{items_html}</div>'
+
+
+def media_note_layout_values(component: dict[str, Any]) -> tuple[str | None, str, str, int]:
+    declared_value = component.get("media_note_layout")
+    declared = str(declared_value).strip().lower() if declared_value is not None else None
+    requested = declared or "auto"
+    note_items = component.get("note_items")
+    note_item_count = len(note_items) if isinstance(note_items, list) else 0
+    if requested == "compact" and note_item_count:
+        effective = "compact"
+    elif requested == "auto" and note_item_count >= 4:
+        effective = "compact"
+    else:
+        effective = "stack"
+    return declared, requested, effective, note_item_count
 
 
 def text_value(value: Any, fallback: str = "") -> str:
@@ -1572,6 +1572,7 @@ def validate_plot_card_component(component: dict[str, Any], location: str) -> No
         "image_position": ({"left", "right"}, "left"),
         "media_vertical_align": ({"start", "center"}, "start"),
         "media_gap": ({"compact", "normal", "relaxed"}, "normal"),
+        "media_note_layout": (set(MEDIA_NOTE_LAYOUTS), "auto"),
     }
     for field_name, (allowed, default) in enum_fields.items():
         value = str(component.get(field_name, default)).strip().lower()
@@ -1584,6 +1585,7 @@ def validate_plot_card_component(component: dict[str, Any], location: str) -> No
         "media_image_ratio",
         "media_vertical_align",
         "media_gap",
+        "media_note_layout",
     }
     declared_media_fields = sorted(field for field in media_only_fields if field in component)
     if layout != "media" and declared_media_fields:
@@ -1988,7 +1990,8 @@ def render_plot_card(component: dict[str, Any], ctx: RenderContext) -> str:
     path = resolve_path(ctx.root, rel)
     record_asset(ctx, "image", component["id"], rel, path)
     title = component.get("title", {"en": path.name, "zh": path.name})
-    note = component.get("note") or component.get("caption") or {"en": rel, "zh": rel}
+    caption = component.get("caption")
+    note_fallback = caption or {"en": rel, "zh": rel}
     zoom = bool_value(component.get("zoom"), True)
     fit = str(component.get("default_fit", "contain")).strip().lower()
     if fit not in {"contain", "original"}:
@@ -2025,7 +2028,7 @@ def render_plot_card(component: dict[str, Any], ctx: RenderContext) -> str:
     )
     note_html = render_note_block(
         component,
-        fallback=note,
+        fallback=note_fallback,
         classes=f"plot-note plot-note-{note_position} component-note-block",
     )
     if layout == "media":
@@ -2039,12 +2042,42 @@ def render_plot_card(component: dict[str, Any], ctx: RenderContext) -> str:
             "--media-image-track": image_track,
             "--media-copy-track": copy_track,
         })
-        caption = component.get("caption")
+        declared_note_layout, requested_note_layout, effective_note_layout, note_item_count = media_note_layout_values(component)
         caption_detail = (
             f'<div class="plot-media-caption">{i18n(caption)}</div>'
-            if caption and caption != note
+            if caption and (component.get("note") is not None or note_item_count > 0)
             else ""
         )
+        note_layout_attrs = (
+            f'data-media-note-layout="{escape(effective_note_layout, quote=True)}" '
+            f'data-media-note-layout-requested="{escape(requested_note_layout, quote=True)}" '
+            f'data-media-note-layout-declared="{escape(declared_note_layout or "", quote=True)}" '
+            f'data-media-note-item-count="{note_item_count}"'
+        )
+        if effective_note_layout == "compact":
+            media_head_html = (
+                '<figcaption class="plot-media-head">'
+                f'<strong>{i18n(title)}</strong>'
+                f'<span class="plot-links">{zoom_button}'
+                f'<a href="{escape(raw_href)}" target="_blank" rel="noopener">{label("Raw", "原始文件")}</a>'
+                '</span>'
+                '</figcaption>'
+            )
+            media_copy_html = (
+                '<div class="plot-media-copy">'
+                f'{note_html}{caption_detail}'
+                '</div>'
+            )
+            return (
+                f'<figure class="plot-card plot-card-media plot-media-note-compact plot-media-image-{escape(image_position)} '
+                f'plot-media-align-{escape(vertical_align)} plot-media-gap-{escape(media_gap)}" '
+                f'id="{escape(component["id"])}" data-image-fit="{escape(fit)}" '
+                f'data-plot-layout="media" data-media-image-ratio="{ratio:.6g}" {note_layout_attrs} style="{media_style}">'
+                f'{media_head_html}'
+                f'<div class="plot-media-image">{image_html}</div>'
+                f'{media_copy_html}'
+                '</figure>'
+            )
         media_caption_html = (
             '<figcaption class="plot-media-copy">'
             f'<strong>{i18n(title)}</strong>'
@@ -2058,7 +2091,7 @@ def render_plot_card(component: dict[str, Any], ctx: RenderContext) -> str:
             f'<figure class="plot-card plot-card-media plot-media-image-{escape(image_position)} '
             f'plot-media-align-{escape(vertical_align)} plot-media-gap-{escape(media_gap)}" '
             f'id="{escape(component["id"])}" data-image-fit="{escape(fit)}" '
-            f'data-plot-layout="media" data-media-image-ratio="{ratio:.6g}" style="{media_style}">'
+            f'data-plot-layout="media" data-media-image-ratio="{ratio:.6g}" {note_layout_attrs} style="{media_style}">'
             f'<div class="plot-media-image">{image_html}</div>'
             f'{media_caption_html}'
             '</figure>'
@@ -4021,6 +4054,35 @@ def write_config_outputs(spec_path: Path, report_dir: Path, manifest: dict[str, 
 def write_indexes(out: Path, manifest: dict[str, Any], ctx: RenderContext) -> None:
     report_dir = out.parent
     report_dir.mkdir(parents=True, exist_ok=True)
+    layout_index = report_dir / "report_layouts.tsv"
+    with layout_index.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle, delimiter="\t")
+        writer.writerow(
+            [
+                "component_id",
+                "layout",
+                "media_note_layout_declared",
+                "media_note_layout_requested",
+                "media_note_layout_effective",
+                "note_item_count",
+            ]
+        )
+        for section in manifest.get("sections", []):
+            for component in section.get("components", []):
+                if component.get("type") != "plot_card" or str(component.get("layout", "grid")).strip().lower() != "media":
+                    continue
+                declared, requested, effective, note_item_count = media_note_layout_values(component)
+                writer.writerow(
+                    [
+                        component.get("id", ""),
+                        "media",
+                        declared or "",
+                        requested,
+                        effective,
+                        note_item_count,
+                    ]
+                )
+    record_generated_file(ctx, "config", "renderer-layouts", layout_index.name, layout_index)
     (report_dir / "report.manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (report_dir / "report_template_version.txt").write_text(TEMPLATE_VERSION + "\n", encoding="utf-8")
     with (report_dir / "report_files.tsv").open("w", encoding="utf-8", newline="") as handle:
@@ -4212,16 +4274,25 @@ def explain_manifest(manifest: dict[str, Any], root: Path | None = None) -> dict
                         info.update({"exists": False, "message": str(exc)})
                 path_infos.append(info)
                 referenced_assets.append(info)
-            components.append(
-                {
-                    "id": component.get("id"),
-                    "type": component.get("type"),
-                    "title": text_value(component.get("title"), str(component.get("id", ""))),
-                    "note_item_count": len(component.get("note_items", [])),
-                    "note_item_kinds": [item.get("kind") for item in component.get("note_items", [])],
-                    "paths": path_infos,
-                }
-            )
+            component_explanation = {
+                "id": component.get("id"),
+                "type": component.get("type"),
+                "title": text_value(component.get("title"), str(component.get("id", ""))),
+                "note_item_count": len(component.get("note_items", [])),
+                "note_item_kinds": [item.get("kind") for item in component.get("note_items", [])],
+                "paths": path_infos,
+            }
+            if component.get("type") == "plot_card" and str(component.get("layout", "grid")).strip().lower() == "media":
+                declared, requested, effective, note_item_count = media_note_layout_values(component)
+                component_explanation.update(
+                    {
+                        "media_note_layout_declared": declared,
+                        "media_note_layout_requested": requested,
+                        "media_note_layout_effective": effective,
+                        "note_item_count": note_item_count,
+                    }
+                )
+            components.append(component_explanation)
         sections.append(
             {
                 "id": section.get("id"),
@@ -4315,6 +4386,7 @@ def report_json_schema() -> dict[str, Any]:
                 "image_position",
                 "media_vertical_align",
                 "media_gap",
+                "media_note_layout",
             }:
                 properties[field_name] = {"type": "string"}
             elif field_name in {"pages"}:
@@ -4381,6 +4453,7 @@ def report_json_schema() -> dict[str, Any]:
             properties["image_position"] = {"type": "string", "enum": ["left", "right"], "default": "left"}
             properties["media_vertical_align"] = {"type": "string", "enum": ["start", "center"], "default": "start"}
             properties["media_gap"] = {"type": "string", "enum": ["compact", "normal", "relaxed"], "default": "normal"}
+            properties["media_note_layout"] = {"type": "string", "enum": list(MEDIA_NOTE_LAYOUTS), "default": "auto"}
         component_defs[name] = {
             "type": "object",
             "properties": properties,
@@ -4715,9 +4788,17 @@ def command_explain(args: argparse.Namespace) -> int:
         for component in section["components"]:
             path_text = ", ".join(item["path"] for item in component["paths"]) if component["paths"] else "no direct asset"
             component_kinds = ",".join(str(kind) for kind in component["note_item_kinds"]) or "none"
+            media_layout_text = ""
+            if "media_note_layout_effective" in component:
+                declared = component.get("media_note_layout_declared") or "<default>"
+                media_layout_text = (
+                    f"; media_note_layout declared={declared} "
+                    f"requested={component['media_note_layout_requested']} "
+                    f"effective={component['media_note_layout_effective']}"
+                )
             print(
                 f"  - {component['id']} ({component['type']}): {path_text}; "
-                f"note_items={component['note_item_count']} kinds={component_kinds}"
+                f"note_items={component['note_item_count']} kinds={component_kinds}{media_layout_text}"
             )
     return 0
 
@@ -4772,11 +4853,14 @@ def command_list_assets(args: argparse.Namespace) -> int:
     report_dir = path if path.is_dir() else path.parent
     files_index = report_dir / "report_files.tsv"
     embedded_index = report_dir / "embedded_html_reports.tsv"
-    payload: dict[str, Any] = {"report_dir": str(report_dir), "files": [], "embedded_html": []}
+    layout_index = report_dir / "report_layouts.tsv"
+    payload: dict[str, Any] = {"report_dir": str(report_dir), "files": [], "embedded_html": [], "layouts": []}
     if files_index.exists():
         payload["files"] = read_tsv_records(files_index)
     if embedded_index.exists():
         payload["embedded_html"] = read_tsv_records(embedded_index)
+    if layout_index.exists():
+        payload["layouts"] = read_tsv_records(layout_index)
     if path.is_file() and path.suffix.lower() in {".html", ".htm"}:
         payload["html"] = html_summary(path)
     if args.json:
@@ -4789,6 +4873,12 @@ def command_list_assets(args: argparse.Namespace) -> int:
         print(f"embedded_html: {len(payload['embedded_html'])}")
         for row in payload["embedded_html"]:
             print(f"  {row.get('status', '')}\t{row.get('id', '')}\t{row.get('embedded_bytes', '')}\t{row.get('path', '')}")
+        print(f"layouts: {len(payload['layouts'])}")
+        for row in payload["layouts"]:
+            print(
+                f"  {row.get('component_id', '')}\t{row.get('layout', '')}\t"
+                f"{row.get('media_note_layout_requested', '')}->{row.get('media_note_layout_effective', '')}"
+            )
         if "html" in payload:
             print(f"html_bytes: {payload['html']['bytes']}")
             print(f"data_image_count: {payload['html']['data_image_count']}")

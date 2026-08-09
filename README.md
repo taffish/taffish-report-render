@@ -20,10 +20,10 @@ Package identity:
 
 - name: `taffish-report-render`
 - command: `taf-taffish-report-render`
-- TAFFISH version: `0.3.1-r1`
+- TAFFISH version: `0.3.2-r1`
 - kind: `tool`
-- image candidate: `ghcr.io/taffish/taffish-report-render:0.3.1-r1`
-- runtime identity: `taffish-report-render 0.3.1-r1`
+- image candidate: `ghcr.io/taffish/taffish-report-render:0.3.2-r1`
+- runtime identity: `taffish-report-render 0.3.2-r1`
 - native platforms: `linux/amd64`, `linux/arm64`
 
 The report spec is the only structural configuration input. Users do not write
@@ -176,7 +176,12 @@ table. `workflow_diagram` supports paired `step_en` / `step_zh`, `note_en` /
 `note_zh`, and `status_en` / `status_zh` fields. `plot_card` supports the
 historical `grid` and `wide` layouts plus a responsive `media` layout for a
 side-by-side figure and explanation. Media cards use validated ratios and
-renderer-defined spacing; report specs never inject arbitrary CSS.
+renderer-defined spacing; report specs never inject arbitrary CSS. For media
+cards, `media_note_layout = "auto"` is the default: zero through three valid
+structured items retain the established stacked copy, while four or more use a
+compact title-above, image-and-notes-below composition. Authors can request
+`stack` or `compact` explicitly; an empty compact request safely falls back to
+stack.
 
 PNG, JPEG, WebP, and SVG assets use renderer-owned MIME mappings, so the same
 input produces the same data URI on every supported host and container. The
@@ -203,9 +208,11 @@ accepted as item fields.
 The shared shell uses component-aware responsive containment rather than global
 content clipping. Long titles, run IDs, SHA-256 values, labels, notes, and action
 rows wrap inside their owners. Tables, code blocks, alignments, and viewer
-surfaces keep intentional internal scrolling. Media plots fold at `820px`,
-structured label/body rows fold at `680px`, and narrow navigation becomes a
-single readable column.
+surfaces keep intentional internal scrolling. Media layout responds to the
+component width, not only the viewport: compact cards fold their image/copy
+columns at `900px`, compact note items become one column at `620px`, and narrow
+navigation becomes a single readable column. Viewport-query fallbacks preserve
+the same boundaries where container queries are unavailable.
 
 Use `taf-taffish-report-render component-doc COMPONENT` for concise CLI field
 documentation, or read the full
@@ -221,6 +228,7 @@ audit sidecars next to the report, including:
 - `report.normalized.json`
 - `report.manifest.json`
 - `report_files.tsv`
+- `report_layouts.tsv`
 - `embedded_html_reports.tsv`
 - `report_template_version.txt`
 
@@ -231,6 +239,10 @@ For image-bearing reports, successful file records in `report_files.tsv` prove
 that the source assets were read, but do not by themselves prove the embedded
 MIME. Release validation therefore checks the rendered HTML data URI prefixes
 and `inspect-html` counts as separate contracts.
+
+`report_layouts.tsv` records each media card's declared, requested, and
+effective note layout plus the valid structured-item count. This makes the
+default `auto` decision auditable without rewriting the normalized spec.
 
 ## Testing Contract
 

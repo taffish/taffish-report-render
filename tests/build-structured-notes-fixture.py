@@ -4,8 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
+import struct
+import zlib
 from pathlib import Path
+
+
+LANDSCAPE_WEBP = "UklGRlYAAABXRUJQVlA4TEkAAAAv78AiABcgEEjEMtnfYRSxYMIzf6+uAG5kP/9xQ2NQ3LZtlKvLdJp7yU5q5Bv3E9H/CRDO+sC9Do0LVv6XkFKMC2x/gIR1hG4CAA=="
 
 
 def toml_string(value: str) -> str:
@@ -45,6 +51,30 @@ def append_note_item(
                 f"items.zh = [{', '.join(toml_string(item) for item in items_zh)}]",
             ]
         )
+
+
+def png_chunk(kind: bytes, data: bytes) -> bytes:
+    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+
+def write_rgb_png(path: Path, width: int, height: int, *, portrait: bool = False) -> None:
+    rows: list[bytes] = []
+    for y in range(height):
+        row = bytearray([0])
+        for x in range(width):
+            if portrait:
+                accent = width // 5 <= x <= width * 4 // 5 and height // 10 <= y <= height * 9 // 10
+            else:
+                accent = width // 12 <= x <= width * 5 // 12 and height // 7 <= y <= height * 6 // 7
+            row.extend((49, 91, 155) if accent else (244, 248, 247))
+        rows.append(bytes(row))
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + png_chunk(b"IHDR", ihdr)
+        + png_chunk(b"IDAT", zlib.compress(b"".join(rows), level=9))
+        + png_chunk(b"IEND", b"")
+    )
 
 
 def build(root: Path, spec: Path) -> None:
@@ -119,6 +149,9 @@ def build(root: Path, spec: Path) -> None:
         "Structured explanation responsive stress figure</text></svg>",
         encoding="utf-8",
     )
+    (figure_dir / "literature-landscape.webp").write_bytes(base64.b64decode(LANDSCAPE_WEBP))
+    write_rgb_png(figure_dir / "literature-landscape-alt.png", 300, 180)
+    write_rgb_png(figure_dir / "literature-portrait.png", 140, 300, portrait=True)
 
     lines = [
         'schema_version = "0.1"',
@@ -128,7 +161,7 @@ def build(root: Path, spec: Path) -> None:
         "",
         "[project]",
         'flow_name = "taffish-report-render"',
-        'flow_version = "0.3.1-r1"',
+        'flow_version = "0.3.2-r1"',
         'analysis_mode = "component-structured-notes-report"',
         'title.en = "0. Structured explanation and responsive overflow stress report"',
         'title.zh = "0. 结构化说明与响应式溢出压力报告"',
@@ -249,8 +282,6 @@ def build(root: Path, spec: Path) -> None:
     component_specs = [
         ("workflow_diagram", "workflow", "source", "04_reports/workflow.tsv", "1.1 Reproducible workflow", "1.1 可复现工作流", "method", "方法"),
         ("plot_card", "wide-figure", "image", "03_results/figures/stress.svg", "1.2 Wide figure", "1.2 全宽图", "reading", "判读"),
-        ("plot_card", "media-figure", "image", "03_results/figures/stress.svg", "1.3 Media figure", "1.3 图文卡片", "observation", "观察"),
-        ("table_preview", "wide-table", "source", "03_results/tables/wide.tsv", "1.4 Wide technical table", "1.4 宽技术表格", "boundary", "边界"),
     ]
     for component_type, component_id, path_field, path, title_en, title_zh, kind, label_zh in component_specs:
         lines.extend(
@@ -264,25 +295,6 @@ def build(root: Path, spec: Path) -> None:
         )
         if component_id == "wide-figure":
             lines.extend(['layout = "wide"', 'note_position = "top"'])
-        elif component_id == "media-figure":
-            lines.extend(
-                [
-                    'layout = "media"',
-                    'image_position = "right"',
-                    "media_image_ratio = 0.70",
-                    'media_vertical_align = "center"',
-                    'media_gap = "relaxed"',
-                ]
-            )
-        elif component_id == "wide-table":
-            lines.extend(
-                [
-                    "preview_rows = 1",
-                    "embed_full = true",
-                    "max_embed_rows = 10",
-                    "max_embed_bytes = 200000",
-                ]
-            )
         lines.extend(
             [
                 f"title.en = {toml_string(title_en)}",
@@ -298,6 +310,123 @@ def build(root: Path, spec: Path) -> None:
             body_en=en_long,
             body_zh=zh_long,
         )
+
+    media_specs = [
+        {
+            "id": "media-auto-webp",
+            "image": "03_results/figures/literature-landscape.webp",
+            "title_en": "1.3 Default auto compact WebP landscape",
+            "title_zh": "1.3 默认 auto 紧凑 WebP 横图",
+            "image_position": "left",
+            "ratio": 0.46,
+            "gap": "normal",
+            "caption_en": "An independent caption remains a caption when structured items suppress the fallback lead.",
+            "caption_zh": "结构化条目抑制回退导语时，独立图注仍按图注语义保留。",
+            "zoom": True,
+        },
+        {
+            "id": "media-compact-portrait",
+            "image": "03_results/figures/literature-portrait.png",
+            "title_en": "1.4 Explicit compact portrait with the longest elements text",
+            "title_zh": "1.4 显式 compact 纵图与最长关键元素说明",
+            "image_position": "right",
+            "ratio": 0.38,
+            "gap": "relaxed",
+            "media_note_layout": "compact",
+            "note_en": "This explicit business lead must remain above the structured explanation.",
+            "note_zh": "这段显式业务导语必须保留在结构化说明上方。",
+            "caption_en": "The portrait image is complete and is never cropped to fill the stretched image region.",
+            "caption_zh": "纵图完整显示，不会为了填满等高图片区而被裁切。",
+            "zoom": False,
+        },
+        {
+            "id": "media-stack-landscape",
+            "image": "03_results/figures/literature-landscape-alt.png",
+            "title_en": "1.5 Explicit backward-compatible stack landscape",
+            "title_zh": "1.5 显式向后兼容 stack 横图",
+            "image_position": "left",
+            "ratio": 0.52,
+            "gap": "compact",
+            "media_note_layout": "stack",
+            "zoom": True,
+        },
+    ]
+    media_note_specs = [
+        ("provenance", "Provenance", "来源与身份", "This generated fixture is deterministic and local.", "该生成夹具是确定且本地的。"),
+        ("elements", "Elements", "关键元素", en_long, zh_long),
+        ("reading", "How to read", "怎么看", "Compare the image region with the structured explanation without assuming causality.", "对照图片区与结构化说明阅读，不预设因果关系。"),
+        ("meaning", "Meaning", "结果含义", "The card demonstrates a renderer-owned layout decision declared only in TOML.", "该卡片展示仅通过 TOML 声明的 renderer 自有布局决策。"),
+        ("boundary", "Does not show", "不能说明", "Layout validation does not establish a biological result.", "版式验证不能建立生物学结果。"),
+    ]
+    for media in media_specs:
+        lines.extend(
+            [
+                "",
+                "[[sections.components]]",
+                'type = "plot_card"',
+                f'id = {toml_string(str(media["id"]))}',
+                f'image = {toml_string(str(media["image"]))}',
+                'layout = "media"',
+                f'image_position = {toml_string(str(media["image_position"]))}',
+                f'media_image_ratio = {media["ratio"]}',
+                'media_vertical_align = "start"',
+                f'media_gap = {toml_string(str(media["gap"]))}',
+                f'zoom = {str(bool(media["zoom"])).lower()}',
+                f'title.en = {toml_string(str(media["title_en"]))}',
+                f'title.zh = {toml_string(str(media["title_zh"]))}',
+            ]
+        )
+        if media.get("media_note_layout"):
+            lines.append(f'media_note_layout = {toml_string(str(media["media_note_layout"]))}')
+        if media.get("note_en"):
+            lines.extend(
+                [
+                    f'note.en = {toml_string(str(media["note_en"]))}',
+                    f'note.zh = {toml_string(str(media["note_zh"]))}',
+                ]
+            )
+        if media.get("caption_en"):
+            lines.extend(
+                [
+                    f'caption.en = {toml_string(str(media["caption_en"]))}',
+                    f'caption.zh = {toml_string(str(media["caption_zh"]))}',
+                ]
+            )
+        for kind, label_en, label_zh, body_en, body_zh in media_note_specs:
+            append_note_item(
+                lines,
+                "sections.components.note_items",
+                kind=kind,
+                label_en=label_en,
+                label_zh=label_zh,
+                body_en=body_en,
+                body_zh=body_zh,
+            )
+
+    lines.extend(
+        [
+            "",
+            "[[sections.components]]",
+            'type = "table_preview"',
+            'id = "wide-table"',
+            'source = "03_results/tables/wide.tsv"',
+            "preview_rows = 1",
+            "embed_full = true",
+            "max_embed_rows = 10",
+            "max_embed_bytes = 200000",
+            'title.en = "1.6 Wide technical table"',
+            'title.zh = "1.6 宽技术表格"',
+        ]
+    )
+    append_note_item(
+        lines,
+        "sections.components.note_items",
+        kind="boundary",
+        label_en="Boundary",
+        label_zh="边界",
+        body_en=en_long,
+        body_zh=zh_long,
+    )
 
     lines.extend(
         [

@@ -66,7 +66,7 @@ def check_sidecars(root: Path, expected_images: int) -> None:
 
 def main() -> int:
     require(
-        run(RENDERER, "--version").stdout.strip() == "taffish-report-render 0.3.1-r1",
+        run(RENDERER, "--version").stdout.strip() == "taffish-report-render 0.3.2-r1",
         "release version mismatch",
     )
     components = run(RENDERER, "components").stdout
@@ -74,7 +74,7 @@ def main() -> int:
         require(component in components, f"missing component: {component}")
     schema = json.loads(run(RENDERER, "schema").stdout)
     schema_text = json.dumps(schema)
-    for field in ("note_items", "media_image_ratio", "boundary"):
+    for field in ("note_items", "media_image_ratio", "media_note_layout", "boundary"):
         require(field in schema_text, f"missing schema field: {field}")
 
     unit = run(
@@ -87,7 +87,7 @@ def main() -> int:
         "-p",
         "test_*.py",
     )
-    require("Ran 15 tests" in unit.stderr and "OK" in unit.stderr, "unit suite did not complete")
+    require("Ran 18 tests" in unit.stderr and "OK" in unit.stderr, "unit suite did not complete")
 
     with tempfile.TemporaryDirectory(prefix="taffish-image-offline-smoke-") as temp:
         base = Path(temp)
@@ -140,7 +140,7 @@ def main() -> int:
         )
         check_sidecars(fungal_root, 7)
 
-    print("IMAGE_OFFLINE_SMOKE_OK version=0.3.1-r1 core_images=5 fungal_images=8 unit_tests=15")
+    print("IMAGE_OFFLINE_SMOKE_OK version=0.3.2-r1 core_images=5 fungal_images=8 unit_tests=18")
     return 0
 
 

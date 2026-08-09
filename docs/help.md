@@ -1,4 +1,4 @@
-taffish-report-render 0.3.1-r1
+taffish-report-render 0.3.2-r1
 
 Usage:
   taf-taffish-report-render COMMAND [OPTIONS]
@@ -37,6 +37,7 @@ Commands:
   explain         Preview sections, components, and referenced files.
   validate-spec   Check TOML/JSON structure.
   inspect-html    Check a rendered HTML report.
+  validate-html   Check the standalone HTML contract.
   components      List fixed component types.
   component-doc   Show concise fields for one component.
   init            Print a minimal TOML starter.
@@ -53,6 +54,8 @@ Common components:
 
 Plot layouts:
   plot_card supports grid, wide, and responsive media layouts.
+  media_note_layout auto keeps 0-3 note items stacked and compacts 4 or more.
+  Compact media folds at component widths 900px and 620px.
   PNG, JPEG, WebP, and SVG use deterministic renderer-owned MIME mappings.
   See the component manual for validated media ratios and alignment fields.
 
@@ -70,3 +73,12 @@ Detailed manuals:
   https://github.com/taffish/taffish-report-render/blob/main/docs/components.en.md
   https://github.com/taffish/taffish-report-render/blob/main/docs/examples.en.md
   https://github.com/taffish/taffish-report-render/blob/main/docs/runtime-packs.en.md
+
+Wrapper options:
+  taf-taffish-report-render --help       Show this TAFFISH help.
+  taf-taffish-report-render --version    Show TAFFISH wrapper version.
+  taf-taffish-report-render --compile    Compile the TAFFISH wrapper.
+  taf-taffish-report-render -- --version Pass an option-leading argument to report-render.
+
+Notes:
+  Non-option subcommands above go directly to the unified report-render CLI.

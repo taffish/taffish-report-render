@@ -145,16 +145,26 @@ image_position = "right"
 media_image_ratio = 0.35
 media_vertical_align = "center"
 media_gap = "relaxed"
+media_note_layout = "auto"
 zoom = true
 default_fit = "contain"
 title.en = "Infection model"
 title.zh = "侵染模型"
 note.en = "Interpretation stays beside the complete uncropped figure on desktop."
 note.zh = "桌面端解释与完整、未裁切的图片保持相邻。"
+
+[[sections.components.note_items]]
+kind = "reading"
+label.en = "How to read"
+label.zh = "如何阅读"
+body.en = "Read the title, then compare the complete figure with the explanation."
+body.zh = "先读标题，再把完整图片与解释对照阅读。"
 ```
 
-No post-render HTML, JavaScript, or CSS modification is needed. At `820px` and
-below the renderer automatically puts the image above the text. Dense
+No post-render HTML, JavaScript, or CSS modification is needed. `auto` uses the
+compact composition when a card has at least four valid structured note items.
+At a component width of `900px` and below the renderer puts the image above the
+text; at `620px` and below compact notes become one column. Dense
 axis-heavy result plots should continue to use `layout = "wide"` and
 `note_position = "top"`.
 

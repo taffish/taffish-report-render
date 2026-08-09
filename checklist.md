@@ -140,7 +140,8 @@
 - [ ] `tests/test-real-run.sh` 结束前必须自动检查输出目录结构：默认全量运行时全部
       flow fixture 目录和全部 component-regression 目录都存在；每个输出单元至少包含
       `report.full.toml`、`04_reports/taffish_report.html`、`report.spec.toml`、
-      `report.normalized.json`、`report.manifest.json`、`report_files.tsv` 和
+      `report.normalized.json`、`report.manifest.json`、`report_files.tsv`、
+      `report_layouts.tsv` 和
       `embedded_html_reports.tsv`。缺失任一关键文件必须失败。
 - [ ] `tests/test-real-run-out/rendered_reports.tsv` 必须汇总全部输出；同时分别生成
       `flow-reports/rendered_reports.tsv` 和
@@ -315,8 +316,10 @@
 - [ ] 响应式压力 fixture 覆盖 300–600 字中文、1000–1500 字英文、六条双语列表、SHA64、
       accession/run ID、URL-like 与无空格长串，以及 numbered section/component、
       wide/media/table/workflow/technical appendix。
-- [ ] 固定视口矩阵覆盖 `1600x1000`、`1280x800`、`821px`、`820px` 和 `390x844`，并逐项
-      检查 zh/en、200% 缩放和 print/PDF；`821px` media 保持双栏，`820px` 及以下图片在前。
+- [ ] 固定视口矩阵覆盖 `1600x1000`、`1280x800` 和 `390x844`；media 还必须用真实组件宽度
+      精确覆盖 `901/900/621/620px`，并逐项检查 zh/en、200% 缩放和 print/PDF；`901px`
+      保持图文双栏，`900px` 及以下图片在前，`621px` compact notes 保持两列，`620px`
+      及以下变成单列。
 - [ ] hero、sidebar/nav、language switch、section head、structured note、card header、badge、
       action row、workflow、plot/table/code/viewer 都不存在页面级横向溢出；table/code/
       alignment/viewer 的有意内部滚动仍可达，不能用全局 overflow 裁切掩盖。
@@ -351,7 +354,9 @@
       4 SVG、1 WebP），断言 `data_image_count = 8`、WebP 精确为 `image/webp`、
       非图片 MIME 数量为 0，并逐项核对 sidecar 状态。
 - [ ] `component-structured-notes-report` 覆盖长双语段落/列表、固定 kinds、恶意文本转义、
-      migrate/normalized/explain 保留，以及 wide/media/table/workflow/appendix 响应式压力路径。
+      migrate/normalized/explain 保留，以及 wide/media/table/workflow/appendix 响应式压力路径；
+      同时包含真实 WebP、横向 PNG、竖向 PNG，覆盖 auto/stack/compact、0/3/4/5 条边界、
+      显式 note/caption、缺省 fallback、zoom 开关和已移除 kind icon 的 DOM 断言。
 - [ ] 生成的 fixture 报告在视觉和能力上不低于复制来的 baseline 或来源路径中记录的现有报告。
 - [ ] 记录回归输出体量；接近 GitHub 50 MB 建议线的报告需要显式 review。
 
@@ -369,15 +374,29 @@
       并支持关闭、Esc、放大、缩小、回到适配窗口，且图片仍以内嵌 data URI 交付。
 - [ ] `plot_card layout="media"` 每张卡片独占一行并由 renderer 的 CSS Grid 实现；
       `image_position` 只允许 left/right，`media_vertical_align` 只允许 start/center，
-      `media_gap` 只允许 compact/normal/relaxed；不能把 media 卡片塞入普通 plot grid。
+      `media_gap` 只允许 compact/normal/relaxed，`media_note_layout` 只允许
+      auto/stack/compact；不能把 media 卡片塞入普通 plot grid。
+- [ ] `media_note_layout` 默认 `auto`：有效 `note_items` 为 0–3 条时 effective=stack，4 条及
+      以上 effective=compact；显式 stack 必须保持 stack，显式 compact 在无有效条目时安全
+      退化为 stack。normalized TOML/JSON 保留声明值，`explain`、HTML data 属性和
+      `report_layouts.tsv` 必须记录 requested/effective 与有效条目数。
+- [ ] compact DOM 顺序固定为整宽居中的 title/action header、图片、说明；结构化说明外层可
+      两列，但每个 label/body 是单个内部阅读列，boundary/limitation/next 跨满说明区；
+      不再输出装饰性 kind icon。
+- [ ] 只要有有效 `note_items`，不得把 caption 或图片路径重复当作隐式 note；显式 `note`
+      仍作为 lead，显式 `caption` 独立保留。
 - [ ] `media_image_ratio` 默认 `0.42`，只接受 `0.25–0.70` 内的有限数值；字符串、NaN、
       无穷值和越界值必须 lint 失败，renderer 只能把校验后的数值转换为 CSS Grid 比例，
       TOML 不接受任意 CSS 表达式。
 - [ ] media 两栏都必须 `min-width: 0`，图片必须保持原始比例、`object-fit: contain` 且不裁切；
       长中英文标题、连续英文字符串、长链接和操作按钮必须留在卡片内并可合理换行。
-- [ ] media 响应式视觉检查固定覆盖 `1440/1280/820/768/390px`：`820px` 及以下始终
-      图片在前、文字在后，忽略桌面比例，不得出现横向滚动、文字重叠、图片裁切或按钮丢失；
+- [ ] media 响应式视觉检查固定覆盖 `1440/1280/390px` viewport 和
+      `901/900/621/620px` component-width：`900px` 及以下始终图片在前、文字在后，
+      `620px` 及以下 compact notes 单列；忽略桌面比例，不得出现横向滚动、文字重叠、
+      图片裁切或按钮丢失；container query 与 viewport fallback 必须同时存在；
       `grid`、`wide` 历史 fixture 必须同时回归，打印样式不得切断单张 media 卡片。
+- [ ] compact 图/文同排时自然等高，但不得用固定 card height、图片裁切、绝对定位或
+      `overflow: hidden` 实现；print 强制单列且标题、图片、说明保持阅读顺序。
 - [ ] 大图 lightbox 打开时必须锁住背后报告页面滚动；在弹层、图片或已适配窗口状态下滚轮
       不应导致背景页面上下滚动，放大后滚轮只作用于弹层内图片滚动区域。
 - [ ] `interactive_plot` 只能用固定组件和 TOML 字段声明，不允许 flow 私自写 Plotly/ECharts

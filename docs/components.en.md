@@ -158,6 +158,7 @@ Common fields:
   range `0.25` through `0.70`.
 - `media_vertical_align`: `start` (default) or `center`.
 - `media_gap`: `compact`, `normal` (default), or `relaxed`.
+- `media_note_layout`: `auto` (default), `stack`, or `compact`.
 - `zoom`: enable the large-image viewer; default `true`.
 - `default_fit`: `contain` (default) or `original` in the viewer.
 
@@ -171,10 +172,21 @@ Behavior:
   grid;
 - desktop `media` cards use validated CSS Grid tracks; the ratio is interpreted
   within the two-column space and does not include the predefined gap;
-- at `820px` and below, `media` becomes one column with the image first even
-  when `image_position = "right"`;
+- `auto` resolves from valid structured items: zero through three use `stack`,
+  while four or more use `compact`; an explicit empty `compact` request safely
+  resolves to `stack`;
+- `compact` places the centered title/action header above the image and copy,
+  then uses a two-column note grid; each note label and body remains one
+  internal reading column, while `boundary`, `limitation`, and `next` span the
+  note grid;
+- media behavior responds to the component width: at `900px` and below the
+  image precedes the copy even when `image_position = "right"`; at `620px` and
+  below compact notes become one column. Equivalent viewport-query fallbacks
+  cover browsers without container-query support;
 - long titles, links, and uninterrupted identifiers wrap inside the copy
   column; images retain their full aspect ratio with `object-fit: contain`;
+- compact image and copy columns stretch to the same row height without fixed
+  card heights, cropping, absolute positioning, or overflow clipping;
 - PNG, JPEG, WebP, and SVG use renderer-owned deterministic MIME mappings and
   the same embedding and lightbox behavior; their exact data URI prefixes do
   not depend on the host or container MIME database.
@@ -191,12 +203,20 @@ image_position = "left"
 media_image_ratio = 0.42
 media_vertical_align = "start"
 media_gap = "normal"
+media_note_layout = "auto"
 zoom = true
 default_fit = "contain"
 title.en = "Fungal infection and effector action sites"
 title.zh = "病原真菌侵染与效应子作用位置"
 note.en = "The figure and its interpretation remain adjacent on wide screens."
 note.zh = "图片与解释在宽屏中保持相邻。"
+
+[[sections.components.note_items]]
+kind = "reading"
+label.en = "How to read"
+label.zh = "如何阅读"
+body.en = "Read the title first, then compare the figure and structured notes."
+body.zh = "先读标题，再对照图片与结构化说明。"
 ```
 
 Use `media` for literature figures, conceptual models, background diagrams, or

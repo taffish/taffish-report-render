@@ -79,10 +79,12 @@ Page-level horizontal overflow is a failure. Intentional internal scrolling for
 tables, code, alignments, and viewer surfaces must remain available; do not hide
 defects with global overflow clipping.
 
-The fixed visual matrix covers `1600x1000`, `1280x800`, the `821px`/`820px`
-media boundary, `390x844`, both languages, 200% zoom, and print/PDF. Media cards
-remain two-column at `821px` and fold image-first at `820px`; structured-note
-label/body rows fold at `680px`.
+The fixed visual matrix covers `1600x1000`, `1280x800`, `390x844`, both
+languages, 200% zoom, and print/PDF. Media component widths additionally cover
+`901px`, `900px`, `621px`, and `620px`: image/copy remains two-column at
+`901px` and folds image-first at `900px`; compact notes remain two-column at
+`621px` and fold to one column at `620px`. These boundaries are component-width
+container queries with equivalent viewport fallbacks.
 
 ## Repository Boundary
 

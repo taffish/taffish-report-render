@@ -1196,9 +1196,7 @@ h3 {
 }
 
 .structured-note-item dt {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  display: block;
   color: var(--ink);
   font-weight: 850;
 }
@@ -1208,22 +1206,8 @@ h3 {
   color: var(--ink);
 }
 
-.structured-note-kind-icon {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--structured-note-accent) 14%, white);
-  color: var(--structured-note-accent);
-  font-size: 11px;
-  font-weight: 900;
-}
-
 .structured-note-label {
-  padding-top: 1px;
+  display: block;
 }
 
 .structured-note-body {
@@ -1266,6 +1250,8 @@ h3 {
   grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   min-width: 0;
+  container-name: plot-media-stack;
+  container-type: inline-size;
 }
 
 .plot-card {
@@ -1396,7 +1382,97 @@ h3 {
   font-size: 13px;
 }
 
-@media (max-width: 820px) {
+.plot-card-media.plot-media-note-compact {
+  grid-template-areas:
+    "head head"
+    "image copy";
+  align-items: stretch;
+  row-gap: 12px;
+}
+
+.plot-card-media.plot-media-note-compact.plot-media-image-right {
+  grid-template-areas:
+    "head head"
+    "copy image";
+}
+
+.plot-card-media .plot-media-head {
+  grid-area: head;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+  text-align: center;
+}
+
+.plot-card-media .plot-media-head strong {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 18px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.plot-card-media .plot-media-head .plot-links {
+  justify-content: center;
+}
+
+.plot-media-note-compact .plot-media-image {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  height: 100%;
+}
+
+.plot-media-note-compact .plot-image-button {
+  height: 100%;
+  min-width: 0;
+}
+
+.plot-card-media.plot-media-note-compact .plot-media-image img {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+}
+
+.plot-card-media.plot-media-note-compact .plot-media-copy {
+  display: grid;
+  align-content: start;
+  align-self: stretch;
+  height: 100%;
+}
+
+.plot-media-note-compact .plot-media-copy .component-note-block,
+.plot-media-note-compact .plot-media-copy .structured-note {
+  width: 100%;
+  max-width: none;
+}
+
+.plot-media-note-compact .plot-media-copy .structured-note {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.plot-media-note-compact .structured-note-item {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 7px;
+}
+
+.plot-media-note-compact .structured-note-kind-boundary,
+.plot-media-note-compact .structured-note-kind-limitation,
+.plot-media-note-compact .structured-note-kind-next {
+  grid-column: 1 / -1;
+}
+
+@container plot-media-stack (max-width: 900px) {
   .plot-card-media,
   .plot-card-media.plot-media-image-right {
     grid-template-columns: minmax(0, 1fr);
@@ -1406,9 +1482,82 @@ h3 {
     row-gap: 14px;
   }
 
+  .plot-card-media.plot-media-note-compact,
+  .plot-card-media.plot-media-note-compact.plot-media-image-right {
+    grid-template-areas:
+      "head"
+      "image"
+      "copy";
+  }
+
+  .plot-media-note-compact .plot-media-image,
+  .plot-media-note-compact .plot-image-button {
+    height: auto;
+  }
+
   .plot-card-media .plot-media-image img {
     width: 100%;
     max-width: 100%;
+  }
+
+  .plot-card-media.plot-media-note-compact .plot-media-image img {
+    height: auto;
+    max-height: none;
+  }
+}
+
+@container plot-media-stack (max-width: 620px) {
+  .plot-media-note-compact .plot-media-copy .structured-note {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .plot-media-note-compact .structured-note-kind-boundary,
+  .plot-media-note-compact .structured-note-kind-limitation,
+  .plot-media-note-compact .structured-note-kind-next {
+    grid-column: auto;
+  }
+}
+
+@supports not (container-type: inline-size) {
+  @media (max-width: 900px) {
+    .plot-card-media,
+    .plot-card-media.plot-media-image-right {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "image"
+        "copy";
+      row-gap: 14px;
+    }
+
+    .plot-card-media.plot-media-note-compact,
+    .plot-card-media.plot-media-note-compact.plot-media-image-right {
+      grid-template-areas:
+        "head"
+        "image"
+        "copy";
+    }
+
+    .plot-media-note-compact .plot-media-image,
+    .plot-media-note-compact .plot-image-button {
+      height: auto;
+    }
+
+    .plot-card-media.plot-media-note-compact .plot-media-image img {
+      height: auto;
+      max-height: none;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .plot-media-note-compact .plot-media-copy .structured-note {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .plot-media-note-compact .structured-note-kind-boundary,
+    .plot-media-note-compact .structured-note-kind-limitation,
+    .plot-media-note-compact .structured-note-kind-next {
+      grid-column: auto;
+    }
   }
 }
 
@@ -3506,6 +3655,52 @@ code {
   .plot-links,
   .sidebar-external {
     display: none;
+  }
+
+  .plot-card-media,
+  .plot-card-media.plot-media-image-right {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "image"
+      "copy";
+    align-items: start;
+    row-gap: 5mm;
+  }
+
+  .plot-card-media.plot-media-note-compact,
+  .plot-card-media.plot-media-note-compact.plot-media-image-right {
+    grid-template-areas:
+      "head"
+      "image"
+      "copy";
+  }
+
+  .plot-media-note-compact .plot-media-image,
+  .plot-media-note-compact .plot-image-button {
+    height: auto;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .plot-card-media.plot-media-note-compact .plot-media-image img {
+    height: auto;
+    max-height: 180mm;
+    margin-inline: auto;
+  }
+
+  .plot-card-media .plot-media-head {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  .plot-media-note-compact .plot-media-copy .structured-note {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .plot-media-note-compact .structured-note-kind-boundary,
+  .plot-media-note-compact .structured-note-kind-limitation,
+  .plot-media-note-compact .structured-note-kind-next {
+    grid-column: auto;
   }
 
   .tree {

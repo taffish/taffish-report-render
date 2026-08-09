@@ -1207,7 +1207,7 @@ language_default = "zh"
 
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "reference"
 title.zh = "TAFFISH RNA-seq 有参分析完整报告"
 title.en = "TAFFISH RNA-seq full reference report"
@@ -1407,7 +1407,7 @@ language_default = "zh"
 
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "denovo"
 title.zh = "TAFFISH RNA-seq 无参分析完整报告"
 title.en = "TAFFISH RNA-seq full de novo report"
@@ -1667,7 +1667,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "component-regression-basic"
 title.en = "Basic component regression test"
 title.zh = "基础组件库测试"
@@ -1780,7 +1780,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "component-media-layout-report"
 title.en = "Scientific media-layout regression"
 title.zh = "科研图文 media 布局回归"
@@ -1899,7 +1899,8 @@ TOML
     grep -F 'plot-media-image-right' "$report" >/dev/null
     grep -F 'plot-media-align-center' "$report" >/dev/null
     grep -F 'plot-media-gap-relaxed' "$report" >/dev/null
-    grep -F '@media (max-width: 820px)' "$report" >/dev/null
+    grep -F '@container plot-media-stack (max-width: 900px)' "$report" >/dev/null
+    grep -F '@supports not (container-type: inline-size)' "$report" >/dev/null
     grep -F 'grid-template-areas:' "$report" >/dev/null
     grep -F '      "image"' "$report" >/dev/null
     grep -F '      "copy"' "$report" >/dev/null
@@ -1982,6 +1983,7 @@ render_component_structured_notes() {
     render_from_spec "$fixture" "$source_root" "$spec" 250000 0
     local report="$fixture_dir/04_reports/taffish_report.html"
     local normalized="$fixture_dir/04_reports/report.normalized.json"
+    local layouts="$fixture_dir/04_reports/report_layouts.tsv"
     local migrated="$fixture_dir/report.migrated.toml"
     local explained="$fixture_dir/report.explained.json"
 
@@ -1989,6 +1991,10 @@ render_component_structured_notes() {
     "$renderer" validate-spec --spec "$migrated" --root "$source_root"
     "$renderer" explain --spec "$spec" --root "$source_root" --json > "$explained"
     grep -F 'class="structured-note"' "$report" >/dev/null
+    if grep -F 'structured-note-kind-icon' "$report" >/dev/null; then
+        echo "ERROR: removed structured note kind icon remains in rendered HTML" >&2
+        exit 1
+    fi
     grep -F 'data-structured-note-count="6"' "$report" >/dev/null
     grep -F 'data-structured-note-kinds="question,input,method,reading,observation,boundary"' "$report" >/dev/null
     grep -F '&lt;script data-taffish-attack=' "$report" >/dev/null
@@ -2001,9 +2007,48 @@ render_component_structured_notes() {
     grep -F '"note_item_count": 6' "$explained" >/dev/null
     grep -F '"note_items"' "$normalized" >/dev/null
     grep -F '[[sections.note_items]]' "$migrated" >/dev/null
-    grep -F '@media (max-width: 820px)' "$report" >/dev/null
+    grep -F 'container-name: plot-media-stack' "$report" >/dev/null
+    grep -F '@container plot-media-stack (max-width: 900px)' "$report" >/dev/null
+    grep -F '@container plot-media-stack (max-width: 620px)' "$report" >/dev/null
     grep -F '@media (max-width: 680px)' "$report" >/dev/null
     grep -F '@media print' "$report" >/dev/null
+    grep -F '.plot-card-media .plot-media-head {' "$report" >/dev/null
+    grep -F 'max-height: 180mm;' "$report" >/dev/null
+    grep -F 'break-after: avoid-page;' "$report" >/dev/null
+    grep -F $'media-auto-webp\tmedia\t\tauto\tcompact\t5' "$layouts" >/dev/null
+    grep -F $'media-compact-portrait\tmedia\tcompact\tcompact\tcompact\t5' "$layouts" >/dev/null
+    grep -F $'media-stack-landscape\tmedia\tstack\tstack\tstack\t5' "$layouts" >/dev/null
+    grep -F 'data-media-note-layout="compact"' "$report" >/dev/null
+    grep -F 'data-media-note-layout-requested="auto"' "$report" >/dev/null
+    grep -F 'data-media-note-layout="stack"' "$report" >/dev/null
+    grep -F 'class="plot-media-head"' "$report" >/dev/null
+    grep -F 'class="plot-media-caption"' "$report" >/dev/null
+    grep -F 'data:image/webp;base64,' "$report" >/dev/null
+    python3 - "$report" <<'PY'
+from pathlib import Path
+import sys
+
+html = Path(sys.argv[1]).read_text(encoding="utf-8")
+auto_start = html.index('id="media-auto-webp"')
+auto_end = html.index('</figure>', auto_start)
+auto_card = html[auto_start:auto_end]
+if 'structured-note-lead' in auto_card:
+    raise SystemExit("default auto card synthesized a fallback lead despite note_items")
+if auto_card.index('plot-media-head') > auto_card.index('plot-media-image'):
+    raise SystemExit("compact DOM order must start with the media header")
+if auto_card.index('plot-media-image') > auto_card.index('plot-media-copy'):
+    raise SystemExit("compact DOM order must place the image before the explanation")
+if 'An independent caption remains a caption' not in auto_card:
+    raise SystemExit("independent compact caption was not preserved")
+
+portrait_start = html.index('id="media-compact-portrait"')
+portrait_end = html.index('</figure>', portrait_start)
+portrait_card = html[portrait_start:portrait_end]
+if 'This explicit business lead must remain' not in portrait_card:
+    raise SystemExit("explicit compact business lead was not preserved")
+if 'data-open-image="media-compact-portrait"' in portrait_card:
+    raise SystemExit("zoom=false compact card unexpectedly has a lightbox trigger")
+PY
 }
 
 render_component_echarts() {
@@ -2041,7 +2086,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "component-component-echarts-report"
 title.en = "ECharts interactive plot library test"
 title.zh = "ECharts 交互图组件库测试"
@@ -2135,7 +2180,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "component-component-tree-alignment-report"
 title.en = "Tree and alignment component regression test"
 title.zh = "树和多序列比对组件库测试"
@@ -2321,7 +2366,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "component-component-igv-report"
 title.en = "IGV genome browser library test"
 title.zh = "IGV 基因组浏览组件库测试"
@@ -2420,7 +2465,7 @@ language_default = "zh"
 
 [project]
 flow_name = "taffish-report-render"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "component-ngl-native-report"
 title.en = "Real NGL structure component regression"
 title.zh = "真实 NGL 结构组件回归"
@@ -2537,6 +2582,7 @@ check_output_layout() {
         test -s "$report_dir/report.normalized.json"
         test -s "$report_dir/report.manifest.json"
         test -s "$report_dir/report_files.tsv"
+        test -s "$report_dir/report_layouts.tsv"
         test -s "$report_dir/embedded_html_reports.tsv"
         grep -F "$category	$fixture" "$index" >/dev/null
         grep -F "$fixture" "$(category_index "$category")" >/dev/null

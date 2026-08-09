@@ -124,7 +124,7 @@ taf-taffish-report-render render \
 高级参数槽。例如：
 
 ```taf
-[[taf: taf-taffish-report-render-v0.3.1-r1 render \
+[[taf: taf-taffish-report-render-v0.3.2-r1 render \
   --spec '"$report_spec"' \
   --root '"$outdir"' \
   --out '"$report_html"' \
@@ -150,15 +150,25 @@ image_position = "right"
 media_image_ratio = 0.35
 media_vertical_align = "center"
 media_gap = "relaxed"
+media_note_layout = "auto"
 zoom = true
 default_fit = "contain"
 title.zh = "侵染模型"
 title.en = "Infection model"
 note.zh = "桌面端解释与完整、未裁切的图片保持相邻。"
 note.en = "Interpretation stays beside the complete uncropped figure on desktop."
+
+[[sections.components.note_items]]
+kind = "reading"
+label.zh = "如何阅读"
+label.en = "How to read"
+body.zh = "先读标题，再把完整图片与解释对照阅读。"
+body.en = "Read the title, then compare the complete figure with the explanation."
 ```
 
-不再需要渲染后修改 HTML、JavaScript 或 CSS。`820px` 及以下会自动变成图片在前的单栏。
+不再需要渲染后修改 HTML、JavaScript 或 CSS。`auto` 在有效结构化条目达到 4 条时使用
+compact；组件宽度 `900px` 及以下变成图片在前的单栏，`620px` 及以下 compact 条目也变成
+单列。
 坐标轴和标签密集的正式结果图仍应使用 `layout = "wide"` 与
 `note_position = "top"`。
 

@@ -65,7 +65,7 @@ Optional but recommended top-level fields:
 
 - `flow_name`: app or flow name, for example `rnaseq-standard-flow` or
   `taffish-report-render`.
-- `flow_version`: TAFFISH package version such as `0.3.1-r1`.
+- `flow_version`: TAFFISH package version such as `0.3.2-r1`.
 - `analysis_mode`: short mode label such as `reference`, `denovo`, `quality`,
   or `component-regression`.
 - `title`: localized report title.
@@ -194,6 +194,16 @@ Layout fields are typed renderer inputs, not CSS escape hatches. For example,
 `plot_card layout = "media"` accepts a numeric `media_image_ratio` only in the
 validated `0.25` to `0.70` range and predefined position/alignment/gap enums.
 Unknown values fail lint; report specs cannot inject arbitrary CSS strings.
+Its `media_note_layout` accepts `auto`, `stack`, or `compact`. The default
+`auto` policy resolves from the number of valid `note_items`: zero through
+three use `stack`, while four or more use `compact`. The declared value remains
+unchanged in normalized TOML/JSON; `explain`, rendered data attributes, and
+`report_layouts.tsv` expose the requested and effective values.
+
+When one or more valid structured items render, the renderer does not duplicate
+`caption` or the image path as an implicit note. An explicitly authored `note`
+still appears as the lead, and an explicitly authored `caption` remains an
+independent caption.
 
 Example:
 
@@ -269,6 +279,7 @@ Rendering writes the standalone HTML plus audit/debug sidecars:
 - `report.normalized.json`: canonical expanded manifest;
 - `report.manifest.json`: rendered manifest;
 - `report_files.tsv`: embedded and linked asset index;
+- `report_layouts.tsv`: declared/requested/effective media-note layout audit;
 - `embedded_html_reports.tsv`: native HTML subreport index;
 - `report_template_version.txt`: renderer template version.
 

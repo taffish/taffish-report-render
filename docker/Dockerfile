@@ -17,7 +17,7 @@ RUN chmod +x /usr/local/bin/report-render \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/ngl/VERSION \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/igv/igv.min.js \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/igv/VERSION \
- && report-render --version | grep -Fx "taffish-report-render 0.3.1-r1" >/dev/null \
+ && report-render --version | grep -Fx "taffish-report-render 0.3.2-r1" >/dev/null \
  && python3 -c 'from pathlib import Path; from taffish_report_render.cli import mime_type_for_path; expected={".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".webp":"image/webp",".svg":"image/svg+xml"}; assert all(mime_type_for_path(Path("figure"+suffix)) == mime for suffix,mime in expected.items())' \
  && report-render components > /tmp/taffish-components.txt \
  && grep -F native_subreport_collection /tmp/taffish-components.txt >/dev/null \
@@ -34,6 +34,7 @@ RUN chmod +x /usr/local/bin/report-render \
  && grep -F '"sequence_alignment"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"genome_browser"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"media_image_ratio"' /tmp/taffish-schema.json >/dev/null \
+ && grep -F '"media_note_layout"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"note_items"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"boundary"' /tmp/taffish-schema.json >/dev/null \
  && echo 'b66b25aeb4df84e33199dc21694014d336d222cbd9deb0e5a7c14bd6aa0d0fd0  /opt/taffish-report-render/python/taffish_report_render/assets/echarts-6.1.0.min.js' | sha256sum -c - \

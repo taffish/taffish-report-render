@@ -69,7 +69,7 @@ def build_spec(root: Path, spec: Path, profile: str, assets: list[tuple[str, str
         "",
         "[project]",
         'flow_name = "taffish-report-render"',
-        'flow_version = "0.3.1-r1"',
+        'flow_version = "0.3.2-r1"',
         f'analysis_mode = "image-mime-{profile}"',
         f'title.en = "{title_en}"',
         f'title.zh = "{title_zh}"',

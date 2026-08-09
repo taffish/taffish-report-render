@@ -12,12 +12,17 @@ from pathlib import Path
 from taffish_report_render.cli import (
     COMPONENT_REGISTRY,
     NOTE_ITEM_KINDS,
+    RenderContext,
     RenderError,
     dump_toml_spec,
     explain_manifest,
     lint_spec,
+    media_note_layout_values,
     normalize_spec,
+    render_note_block,
+    render_plot_card,
     render_structured_note_items,
+    report_json_schema,
     validate_spec,
 )
 
@@ -41,7 +46,7 @@ def base_spec() -> dict[str, object]:
         "language_default": "zh",
         "project": {
             "flow_name": "structured-note-test",
-            "flow_version": "0.3.1-r1",
+            "flow_version": "0.3.2-r1",
             "analysis_mode": "unit",
             "title": {"en": "Structured note test", "zh": "结构化说明测试"},
         },
@@ -87,6 +92,113 @@ class StructuredNoteTests(unittest.TestCase):
         self.assertEqual(html.count('class="structured-note-item '), len(NOTE_ITEM_KINDS))
         positions = [html.index(f'data-note-kind="{kind}"') for kind in NOTE_ITEM_KINDS]
         self.assertEqual(positions, sorted(positions))
+        self.assertNotIn("structured-note-kind-icon", html)
+        self.assertEqual(html.count('class="structured-note-label"'), len(NOTE_ITEM_KINDS))
+
+    def test_note_items_suppress_fallback_but_keep_explicit_lead(self) -> None:
+        owner = {"note_items": [note_item("reading")]}
+        html = render_note_block(owner, fallback={"en": "fallback-path", "zh": "回退路径"})
+        self.assertNotIn("fallback-path", html)
+        self.assertNotIn("回退路径", html)
+        self.assertIn("reading label", html)
+
+        explicit = deepcopy(owner)
+        explicit["note"] = {"en": "Business lead", "zh": "业务导语"}
+        explicit_html = render_note_block(explicit, fallback={"en": "fallback", "zh": "回退"})
+        self.assertIn("Business lead", explicit_html)
+        self.assertIn("业务导语", explicit_html)
+
+    def test_media_note_layout_resolution_and_validation(self) -> None:
+        for count, expected in ((0, "stack"), (3, "stack"), (4, "compact"), (5, "compact")):
+            with self.subTest(count=count):
+                component = {"note_items": [note_item("reading") for _ in range(count)]}
+                self.assertEqual(media_note_layout_values(component), (None, "auto", expected, count))
+
+        compact = {"media_note_layout": "compact", "note_items": [note_item("reading")]}
+        self.assertEqual(media_note_layout_values(compact)[2], "compact")
+        self.assertEqual(media_note_layout_values({"media_note_layout": "compact"})[2], "stack")
+        self.assertEqual(
+            media_note_layout_values({"media_note_layout": "stack", "note_items": [note_item() for _ in range(5)]})[2],
+            "stack",
+        )
+
+        for value in ("auto", "stack", "compact"):
+            spec = base_spec()
+            spec["sections"][0]["components"] = [  # type: ignore[index]
+                {
+                    "type": "plot_card",
+                    "id": f"media-{value}",
+                    "image": "figure.svg",
+                    "layout": "media",
+                    "media_note_layout": value,
+                    "note_items": [note_item("reading")],
+                }
+            ]
+            validate_spec(spec)
+
+        invalid = base_spec()
+        invalid["sections"][0]["components"] = [  # type: ignore[index]
+            {
+                "type": "plot_card",
+                "id": "invalid-media-note-layout",
+                "image": "figure.svg",
+                "layout": "media",
+                "media_note_layout": "dense",
+            }
+        ]
+        with self.assertRaisesRegex(RenderError, "media_note_layout must be one of"):
+            validate_spec(invalid)
+
+        wrong_context = deepcopy(invalid)
+        wrong_context["sections"][0]["components"][0]["layout"] = "grid"  # type: ignore[index]
+        wrong_context["sections"][0]["components"][0]["media_note_layout"] = "auto"  # type: ignore[index]
+        with self.assertRaisesRegex(RenderError, "media-only fields require layout=media"):
+            validate_spec(wrong_context)
+
+    def test_media_note_layout_schema_round_trip_explain_and_compact_dom(self) -> None:
+        schema = report_json_schema()
+        field = schema["$defs"]["plot_card"]["properties"]["media_note_layout"]
+        self.assertEqual(field["enum"], ["auto", "stack", "compact"])
+        self.assertEqual(field["default"], "auto")
+
+        spec = base_spec()
+        component = {
+            "type": "plot_card",
+            "id": "compact-media",
+            "image": "figure.svg",
+            "layout": "media",
+            "media_note_layout": "auto",
+            "caption": {"en": "Independent caption", "zh": "独立图注"},
+            "title": {"en": "Compact media", "zh": "紧凑媒体"},
+            "note_items": [note_item(kind) for kind in ("provenance", "elements", "reading", "meaning", "boundary")],
+        }
+        spec["sections"][0]["components"] = [component]  # type: ignore[index]
+        manifest = normalize_spec(spec)
+        dumped = dump_toml_spec(manifest)
+        parsed = tomllib.loads(dumped)
+        self.assertEqual(parsed["sections"][0]["components"][0]["media_note_layout"], "auto")
+        explanation = explain_manifest(manifest)["sections"][0]["components"][0]
+        self.assertEqual(explanation["media_note_layout_declared"], "auto")
+        self.assertEqual(explanation["media_note_layout_requested"], "auto")
+        self.assertEqual(explanation["media_note_layout_effective"], "compact")
+
+        with tempfile.TemporaryDirectory(prefix="taffish-media-note-dom-") as temp:
+            root = Path(temp)
+            (root / "figure.svg").write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 2"><path d="M0 0h4v2H0z"/></svg>\n',
+                encoding="utf-8",
+            )
+            html = render_plot_card(component, RenderContext(root=root, report_dir=root))
+        figure_content = html[html.index(">") + 1 :]
+        self.assertTrue(figure_content.startswith('<figcaption class="plot-media-head">'))
+        self.assertLess(html.index('<figcaption class="plot-media-head">'), html.index('<div class="plot-media-image">'))
+        self.assertLess(html.index('<div class="plot-media-image">'), html.index('<div class="plot-media-copy">'))
+        self.assertIn('data-media-note-layout="compact"', html)
+        self.assertIn('data-media-note-layout-requested="auto"', html)
+        self.assertIn('data-media-note-item-count="5"', html)
+        self.assertIn("Independent caption", html)
+        self.assertNotIn("figure.svg</p>", html)
+        self.assertNotIn("structured-note-kind-icon", html)
 
     def test_body_and_real_list_can_coexist_and_are_escaped(self) -> None:
         item = note_item("elements")

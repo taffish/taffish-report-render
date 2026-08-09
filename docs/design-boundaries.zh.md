@@ -93,9 +93,11 @@ section 标题、结构化说明、card header、badge、action row、workflow�
 都要显式处理 `min-width: 0`、最大内联尺寸和长字符串换行。页面级横向溢出视为失败；表格、
 代码、比对和 viewer 的有意内部滚动仍应保留，不能用全局 `overflow: hidden` 掩盖问题。
 
-固定视觉矩阵至少覆盖 `1600x1000`、`1280x800`、`821px`、`820px`、`390x844`，中英文、
-200% 缩放和 print/PDF。`820px` 是 media 卡片折叠边界：`821px` 保持双栏，`820px` 及以下
-图片在前、说明在后；结构化说明标签/正文在 `680px` 及以下折为单列。
+固定视觉矩阵至少覆盖 `1600x1000`、`1280x800`、`390x844`，中英文、200% 缩放和
+print/PDF；media 组件宽度还要精确覆盖 `901px`、`900px`、`621px`、`620px`。
+`901px` 保持图文双栏，`900px` 及以下图片在前、说明在后；compact 说明在 `621px`
+保持两列，在 `620px` 及以下折为单列。上述边界使用 component-width container query，
+同时保留同边界 viewport fallback。
 
 ## 多语言策略
 

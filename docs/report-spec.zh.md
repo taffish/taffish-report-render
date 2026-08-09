@@ -101,7 +101,7 @@ taf-taffish-report-render migrate --spec report.toml --root OUTDIR --format json
 ```toml
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "reference"
 title.zh = "TAFFISH RNA-seq 项目报告"
 title.en = "TAFFISH RNA-seq project report"
@@ -232,6 +232,13 @@ body.en = "This figure shows an association and does not establish causality by 
 布局字段是有类型、经过校验的 renderer 输入，不是任意 CSS 逃生口。例如
 `plot_card layout = "media"` 的 `media_image_ratio` 只能是 `0.25–0.70` 内的有限数值，
 位置、对齐和间距只能使用固定枚举。未知值会在 lint 阶段失败，TOML 不能注入任意 CSS。
+`media_note_layout` 只接受 `auto`、`stack`、`compact`：默认 `auto` 按有效
+`note_items` 条数解析，0–3 条为 `stack`，4 条及以上为 `compact`。normalized TOML/JSON
+保留原始声明，不把 `auto` 改写为当前结果；`explain`、HTML data 属性和
+`report_layouts.tsv` 同时记录 requested/effective，便于审计。
+
+只要至少一条有效结构化说明成功渲染，renderer 就不再把 `caption` 或图片路径重复作为
+隐式说明；显式 `note` 仍作为 lead，显式 `caption` 仍独立显示。
 
 ## Collection Components
 
@@ -386,11 +393,13 @@ report.spec.toml 或 report.spec.json
 report.normalized.json
 report.manifest.json
 report_files.tsv
+report_layouts.tsv
 embedded_html_reports.tsv
 report_template_version.txt
 ```
 
 这些文件是调试和审计入口。`report_files.tsv` 记录打包或引用过的资产；
+`report_layouts.tsv` 记录 media 说明布局的 declared/requested/effective 与有效条目数；
 `embedded_html_reports.tsv` 记录原生 HTML 子报告的嵌入状态、体积和策略。
 
 ## 验证建议

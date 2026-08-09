@@ -413,12 +413,20 @@ image_position = "left"
 media_image_ratio = 0.42
 media_vertical_align = "start"
 media_gap = "normal"
+media_note_layout = "auto"
 zoom = true
 default_fit = "contain"
 title.zh = "病原真菌侵染与效应子作用位置"
 title.en = "Fungal Infection and Effector Action Sites"
 note.zh = "图片与解释在宽屏中保持相邻。"
 note.en = "The figure and its interpretation remain adjacent on wide screens."
+
+[[sections.components.note_items]]
+kind = "reading"
+label.zh = "如何阅读"
+label.en = "How to read"
+body.zh = "先读标题，再对照图片与结构化说明。"
+body.en = "Read the title first, then compare the figure and structured notes."
 ```
 
 media 专用字段：
@@ -429,13 +437,21 @@ media 专用字段：
 - `media_vertical_align = "start" | "center"`：两栏顶部或居中对齐，默认 `start`；
 - `media_gap = "compact" | "normal" | "relaxed"`：使用 renderer 固定间距等级，
   默认 `normal`；
+- `media_note_layout = "auto" | "stack" | "compact"`：说明区布局，默认 `auto`；
+  有效 `note_items` 为 0–3 条时使用 `stack`，4 条及以上自动使用 `compact`；显式请求
+  `compact` 但没有有效条目时安全退化为 `stack`；
 - `title`、`note`、`caption`、`zoom` 和 `default_fit` 继续复用既有字段。
 
 响应式契约：
 
-- `820px` 以上使用 CSS Grid 两栏；每张 media 卡片独占一行，连续三张会纵向排列；
-- `820px` 及以下自动改为单栏，始终先显示图片，再显示标题、操作、说明和 caption；
+- `compact` 把居中的标题/操作区放在整卡顶部，下一行图片与说明并排；说明条目外层可两列，
+  但每个 label/body 始终保持单个内部阅读列，`boundary`、`limitation`、`next` 跨满说明区；
+- 断点按组件宽度而非只按 viewport 判断：`900px` 以上保持图文双栏，`900px` 及以下
+  始终先图后文；`620px` 及以下 compact 条目改为单列；不支持 container query 的浏览器
+  使用同边界 viewport fallback；
 - 窄屏忽略桌面比例，不产生横向滚动；图片保持原始比例并使用 `object-fit: contain`；
+- compact 的图片栏和说明栏在同一行自然等高，但不使用固定卡片高度、裁切、绝对定位或
+  `overflow: hidden`；`media_vertical_align` 继续控制 `stack`，compact 由等高契约接管；
 - 长中英文标题、长链接和连续英文标识符必须在文字栏内换行；
 - 未识别枚举、字符串/NaN/非有限比例、越界比例或在非 media 布局中声明 media 专用字段，
   都会在验证/lint 阶段失败。

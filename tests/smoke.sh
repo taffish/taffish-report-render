@@ -15,7 +15,7 @@ rm -rf "$render_root"
 mkdir -p "$render_root"
 
 echo "[SMOKE] version and components"
-"$renderer" --version | grep -Fx "taffish-report-render 0.3.1-r1" >/dev/null
+"$renderer" --version | grep -Fx "taffish-report-render 0.3.2-r1" >/dev/null
 "$renderer" components | grep -F "native_subreport" >/dev/null
 "$renderer" components | grep -F "code_file" >/dev/null
 "$renderer" components | grep -F "structure_viewer" >/dev/null
@@ -30,6 +30,7 @@ echo "[SMOKE] version and components"
 "$renderer" component-doc plot_card | grep -F "layout supports grid, wide, and media" >/dev/null
 "$renderer" component-doc plot_card | grep -F "note_items" >/dev/null
 "$renderer" schema | grep -F '"media_image_ratio"' >/dev/null
+"$renderer" schema | grep -F '"media_note_layout"' >/dev/null
 "$renderer" schema | grep -F '"note_items"' >/dev/null
 "$renderer" schema | grep -F '"boundary"' >/dev/null
 
@@ -302,7 +303,7 @@ language_default = "zh"
 
 [project]
 flow_name = "media-layout-regression"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "component-regression"
 title.en = "Media Layout Regression"
 title.zh = "媒体布局回归测试"
@@ -325,6 +326,34 @@ note.zh = "默认媒体卡让图片与解释保持相邻。"
 zoom = true
 default_fit = "contain"
 
+[[sections.components.note_items]]
+kind = "provenance"
+label.en = "Provenance"
+label.zh = "来源"
+body.en = "This deterministic SVG is generated inside the smoke fixture."
+body.zh = "该确定性 SVG 在 smoke 夹具中生成。"
+
+[[sections.components.note_items]]
+kind = "elements"
+label.en = "Elements"
+label.zh = "关键元素"
+body.en = "A circle and two text-like bars provide a landscape stress shape."
+body.zh = "圆形和两条文本状横条构成横图压力形状。"
+
+[[sections.components.note_items]]
+kind = "reading"
+label.en = "How to read"
+label.zh = "怎么看"
+body.en = "Compare the image and explanation regions without expecting a crop."
+body.zh = "对照图片区与说明区阅读，不应发生裁图。"
+
+[[sections.components.note_items]]
+kind = "meaning"
+label.en = "Meaning"
+label.zh = "含义"
+body.en = "Four note items make the default auto policy select compact."
+body.zh = "四个说明条目使默认 auto 策略选择 compact。"
+
 [[sections.components]]
 type = "plot_card"
 id = "media-ratio-030"
@@ -334,6 +363,7 @@ image_position = "right"
 media_image_ratio = 0.30
 media_vertical_align = "center"
 media_gap = "compact"
+media_note_layout = "stack"
 title.en = "Portrait figure on the right"
 title.zh = "右侧竖版图片"
 note.en = "A portrait image uses a narrow image track and vertically centered alignment."
@@ -397,6 +427,7 @@ TOML
 media_report="$render_root/media/04_reports/report.html"
 test "$(grep -o 'class="plot-media-stack"' "$media_report" | wc -l | tr -d ' ')" = "1"
 test "$(grep -o 'class="plot-card plot-card-media' "$media_report" | wc -l | tr -d ' ')" = "4"
+test "$(grep -o 'class="plot-card plot-card-media plot-media-note-compact' "$media_report" | wc -l | tr -d ' ')" = "1"
 grep -F 'data-media-image-ratio="0.42"' "$media_report" >/dev/null
 grep -F 'data-media-image-ratio="0.3"' "$media_report" >/dev/null
 grep -F 'data-media-image-ratio="0.5"' "$media_report" >/dev/null
@@ -405,9 +436,21 @@ grep -F 'plot-media-image-right' "$media_report" >/dev/null
 grep -F 'plot-media-align-center' "$media_report" >/dev/null
 grep -F 'plot-media-gap-compact' "$media_report" >/dev/null
 grep -F 'plot-media-gap-relaxed' "$media_report" >/dev/null
-grep -F 'grid-template-areas: "image copy";' "$media_report" >/dev/null
-grep -F '@media (max-width: 820px)' "$media_report" >/dev/null
+grep -F 'container-name: plot-media-stack;' "$media_report" >/dev/null
+grep -F '@container plot-media-stack (max-width: 900px)' "$media_report" >/dev/null
+grep -F '@container plot-media-stack (max-width: 620px)' "$media_report" >/dev/null
 grep -F 'grid-template-areas:' "$media_report" >/dev/null
+grep -F 'data-media-note-layout="compact"' "$media_report" >/dev/null
+grep -F 'data-media-note-layout-requested="auto"' "$media_report" >/dev/null
+grep -F 'data-media-note-layout-declared=""' "$media_report" >/dev/null
+grep -F 'data-media-note-item-count="4"' "$media_report" >/dev/null
+grep -F 'data-media-note-layout="stack"' "$media_report" >/dev/null
+grep -F $'media-default\tmedia\t\tauto\tcompact\t4' "$render_root/media/04_reports/report_layouts.tsv" >/dev/null
+grep -F $'media-ratio-030\tmedia\tstack\tstack\tstack\t0' "$render_root/media/04_reports/report_layouts.tsv" >/dev/null
+if grep -F 'structured-note-kind-icon' "$media_report" >/dev/null; then
+  echo "unexpected removed structured-note kind icon" >&2
+  exit 1
+fi
 grep -F 'data-i18n-lang="en">Default 0.42 image ratio<' "$media_report" >/dev/null
 grep -F 'data-i18n-lang="zh">默认 0.42 图片比例<' "$media_report" >/dev/null
 grep -F 'data-open-image="media-default"' "$media_report" >/dev/null
@@ -451,6 +494,7 @@ make_invalid_media_spec "ratio-string" 'media_image_ratio = "0.42"'
 make_invalid_media_spec "position" 'image_position = "middle"'
 make_invalid_media_spec "vertical-align" 'media_vertical_align = "end"'
 make_invalid_media_spec "gap" 'media_gap = "wide"'
+make_invalid_media_spec "note-layout" 'media_note_layout = "dense"'
 
 cat > "$render_root/media/invalid-layout.toml" <<'TOML'
 schema_version = "0.1"
@@ -848,7 +892,7 @@ language_default = "zh"
 
 [project]
 flow_name = "bio-viewer-smoke"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "bio-viewers"
 title.zh = "生信浏览器组件测试"
 title.en = "Bio Viewer Component Smoke"
@@ -937,7 +981,7 @@ language_default = "zh"
 
 [project]
 flow_name = "policy-smoke"
-flow_version = "0.3.1-r1"
+flow_version = "0.3.2-r1"
 analysis_mode = "native-subreport-policy"
 title.zh = "子报告策略测试"
 title.en = "Subreport Policy Smoke"
@@ -1011,6 +1055,7 @@ test -s "$outdir/04_reports/report.manifest.json"
 test -s "$outdir/04_reports/report.spec.toml"
 test -s "$outdir/04_reports/report.normalized.json"
 test -s "$outdir/04_reports/report_files.tsv"
+test -s "$outdir/04_reports/report_layouts.tsv"
 test -s "$outdir/04_reports/embedded_html_reports.tsv"
 grep -F "multiqc" "$outdir/04_reports/embedded_html_reports.tsv" >/dev/null
 grep -F "data:image/" "$report" >/dev/null
@@ -1022,8 +1067,8 @@ grep -F 'data-open-subreport="multiqc"' "$report" >/dev/null
 grep -F 'openEmbeddedSubreportWindow' "$report" >/dev/null
 grep -F 'window.open("about:blank", "_blank")' "$report" >/dev/null
 grep -F 'data-subreport-loading' "$report" >/dev/null
-grep -F 'href="../../../../testdata/fixtures/ngs-qc/03_results/html/multiqc_report.html"' "$report" >/dev/null
-grep -F 'href="../../../../testdata/fixtures/ngs-qc/03_results/seqkit/clean_fastq_stats.tsv"' "$report" >/dev/null
+grep -F 'testdata/fixtures/ngs-qc/03_results/html/multiqc_report.html"' "$report" >/dev/null
+grep -F 'testdata/fixtures/ngs-qc/03_results/seqkit/clean_fastq_stats.tsv"' "$report" >/dev/null
 grep -F '打开内嵌报告' "$report" >/dev/null
 grep -F '打开源 HTML' "$report" >/dev/null
 grep -F "table-card table-preview-card" "$report" >/dev/null
@@ -1150,7 +1195,7 @@ grep -F 'id="trimmed-alignment"' "$phylo_report" >/dev/null
 grep -F 'data-copy-code' "$phylo_report" >/dev/null
 grep -F 'sample_A:0.0123' "$phylo_report" >/dev/null
 grep -F 'human_P99999_Homo' "$phylo_report" >/dev/null
-grep -F 'href="../../../../testdata/fixtures/phylogeny/03_results/tree/plots/tree.png"' "$phylo_report" >/dev/null
+grep -F 'testdata/fixtures/phylogeny/03_results/tree/plots/tree.png"' "$phylo_report" >/dev/null
 grep -F $'newick\ttree-inline\t03_results/tree/tree.nwk' "$phylo_out/04_reports/report_files.tsv" >/dev/null
 grep -F $'alignment\ttrimmed-alignment\t03_results/alignment/trimmed.fa' "$phylo_out/04_reports/report_files.tsv" >/dev/null
 grep -F $'text\ttree-newick\t03_results/tree/tree.nwk' "$phylo_out/04_reports/report_files.tsv" >/dev/null
