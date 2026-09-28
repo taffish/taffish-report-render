@@ -4,6 +4,10 @@
 and points them at result assets; it does not provide custom HTML, JavaScript,
 or CSS.
 
+Since 0.4.0 every component, including collections, accepts `toc.visible`
+and localized `toc.title`. These affect navigation only, never body content,
+anchors or asset indexes. See the [navigation contract](toc.en.md).
+
 For concise CLI field documentation:
 
 ```sh

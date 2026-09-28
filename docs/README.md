@@ -5,6 +5,8 @@ This directory documents the low-code TAFFISH report model used by
 
 Recommended reading order:
 
+0. Hierarchical navigation (0.4 candidate): [English](toc.en.md) / [中文](toc.zh.md)
+
 1. Report spec:
    [English](report-spec.en.md) / [中文](report-spec.zh.md)
 2. Component reference:

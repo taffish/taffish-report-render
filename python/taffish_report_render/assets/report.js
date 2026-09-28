@@ -57,6 +57,7 @@
   }
 
   function setupScrollSpy() {
+    if (document.querySelector('.section-nav[data-toc-mode="tree"]')) return;
     var links = document.querySelectorAll(".section-nav a[href^='#']");
     var sections = [];
     var linkById = {};

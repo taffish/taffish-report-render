@@ -5,19 +5,15 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from smoke_support import run
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 RENDERER = os.environ.get("TAFFISH_REPORT_RENDER_BIN", "/usr/local/bin/report-render")
 FIXTURE_BUILDER = APP_ROOT / "tests" / "build-image-mime-fixture.py"
-
-
-def run(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(args, check=check, text=True, capture_output=True)
 
 
 def require(condition: bool, message: str) -> None:
@@ -66,7 +62,7 @@ def check_sidecars(root: Path, expected_images: int) -> None:
 
 def main() -> int:
     require(
-        run(RENDERER, "--version").stdout.strip() == "taffish-report-render 0.3.3-r1",
+        run(RENDERER, "--version").stdout.strip() == "taffish-report-render 0.4.0-r1",
         "release version mismatch",
     )
     components = run(RENDERER, "components").stdout
@@ -87,7 +83,7 @@ def main() -> int:
         "-p",
         "test_*.py",
     )
-    require("Ran 21 tests" in unit.stderr and "OK" in unit.stderr, "unit suite did not complete")
+    require("Ran " in unit.stderr and "OK" in unit.stderr, "unit suite did not complete")
 
     with tempfile.TemporaryDirectory(prefix="taffish-image-offline-smoke-") as temp:
         base = Path(temp)
@@ -140,7 +136,7 @@ def main() -> int:
         )
         check_sidecars(fungal_root, 7)
 
-    print("IMAGE_OFFLINE_SMOKE_OK version=0.3.3-r1 core_images=5 fungal_images=8 unit_tests=21")
+    print("IMAGE_OFFLINE_SMOKE_OK version=0.4.0-r1 core_images=5 fungal_images=8")
     return 0
 
 

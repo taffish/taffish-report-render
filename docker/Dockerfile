@@ -1,7 +1,20 @@
-FROM python:3.12-alpine@sha256:6d43704baacd1bfbe7c295d7f13079d5d8104ed33568873133f8fc69980419df
+FROM python:3.12-alpine@sha256:6d43704baacd1bfbe7c295d7f13079d5d8104ed33568873133f8fc69980419df AS runtime-seed
+
+# stdlib-only renderer：去除安装器和开发头文件；final stage 不携带已删除的底层字节。
+# TAFFISH 的 quoted container heredoc 使用 Bash；固定依赖，不在宿主安装。
+RUN apk add --no-cache bash=5.3.9-r1 \
+ && python3 -m pip uninstall --yes pip \
+ && rm -rf /usr/local/include/python3.12 /usr/local/lib/python3.12/ensurepip
+
+FROM scratch
+COPY --from=runtime-seed / /
+ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV LANG=C.UTF-8
 
 COPY python /opt/taffish-report-render/python
 COPY bin/report-render /usr/local/bin/report-render
+COPY tests/*.py /opt/taffish-report-render/tests/
+COPY tools/prepare-chengdu-yuanda-report12-fixture.py /opt/taffish-report-render/tools/
 
 ENV TAFFISH_ENV=TAFFISH
 ENV TAFFISH_NAME=taffish-report-render
@@ -9,6 +22,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/opt/taffish-report-render/python
 
 RUN chmod +x /usr/local/bin/report-render \
+ && bash --version >/dev/null \
  && test -s /opt/taffish-report-render/python/taffish_report_render/assets/echarts-6.1.0.min.js \
  && test -s /opt/taffish-report-render/python/taffish_report_render/assets/plotly-1.2.0.min.js \
  && test -s /opt/taffish-report-render/python/taffish_report_render/assets/SOURCE.json \
@@ -17,7 +31,7 @@ RUN chmod +x /usr/local/bin/report-render \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/ngl/VERSION \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/igv/igv.min.js \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/igv/VERSION \
- && report-render --version | grep -Fx "taffish-report-render 0.3.3-r1" >/dev/null \
+ && report-render --version | grep -Fx "taffish-report-render 0.4.0-r1" >/dev/null \
  && python3 -c 'from pathlib import Path; from taffish_report_render.cli import mime_type_for_path; expected={".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".webp":"image/webp",".svg":"image/svg+xml"}; assert all(mime_type_for_path(Path("figure"+suffix)) == mime for suffix,mime in expected.items())' \
  && report-render components > /tmp/taffish-components.txt \
  && grep -F native_subreport_collection /tmp/taffish-components.txt >/dev/null \
@@ -36,6 +50,7 @@ RUN chmod +x /usr/local/bin/report-render \
  && grep -F '"media_image_ratio"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"media_note_layout"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"note_items"' /tmp/taffish-schema.json >/dev/null \
+ && grep -F '"sectionToc"' /tmp/taffish-schema.json >/dev/null \
  && grep -F '"boundary"' /tmp/taffish-schema.json >/dev/null \
  && echo 'b66b25aeb4df84e33199dc21694014d336d222cbd9deb0e5a7c14bd6aa0d0fd0  /opt/taffish-report-render/python/taffish_report_render/assets/echarts-6.1.0.min.js' | sha256sum -c - \
  && echo '60169d9df25530f1d5e29c663ceb18ea7492862acb308800fc5ab0f0bf31a41e  /opt/taffish-report-render/python/taffish_report_render/assets/plotly-1.2.0.min.js' | sha256sum -c - \
@@ -44,3 +59,4 @@ RUN chmod +x /usr/local/bin/report-render \
  && rm -f /tmp/taffish-components.txt /tmp/taffish-schema.json
 
 WORKDIR /work
+CMD ["python3"]

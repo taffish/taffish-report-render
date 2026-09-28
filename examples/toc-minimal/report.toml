@@ -1,0 +1,32 @@
+template = "taffish-flow-report"
+[project]
+title.zh = "人工目录示例"
+title.en = "Synthetic TOC example"
+
+[[sections]]
+id = "positions"
+title.zh = "4. 候选差异具体在哪里"
+title.en = "4. Candidate differences"
+toc.collapsed = true
+
+[[sections]]
+id = "focused_targets"
+title.zh = "4.1 有候选差异的目标"
+title.en = "4.1 Targets with candidate differences"
+toc.parent = "positions"
+
+[[sections]]
+id = "candidate_a"
+title.zh = "4.1.1 目标 A 的完整名称与说明"
+title.en = "4.1.1 Full description of target A"
+toc.parent = "focused_targets"
+toc.title.zh = "4.1.1 目标 A"
+toc.title.en = "4.1.1 Target A"
+
+[[sections.components]]
+id = "candidate_a_score"
+type = "plot_card"
+image = "score.svg"
+title.zh = "人工评分示意图，不是科学结果"
+title.en = "Synthetic score illustration, not a scientific result"
+toc.visible = false

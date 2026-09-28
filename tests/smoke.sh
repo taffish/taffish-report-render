@@ -11,7 +11,10 @@ render_root="${TAFFISH_REPORT_RENDER_SMOKE_OUT:-$app_root/tests/smoke-out}"
 outdir="$render_root/ngs-qc"
 report="$outdir/04_reports/taffish_report.html"
 
-rm -rf "$render_root"
+if [ -e "$render_root" ]; then
+  echo "[SMOKE] output already exists; set TAFFISH_REPORT_RENDER_SMOKE_OUT to a fresh directory: $render_root" >&2
+  exit 1
+fi
 mkdir -p "$render_root"
 
 # Interface smoke uses explicit test-only runtime markers. Generate them inside
@@ -38,7 +41,7 @@ ngs_fixture_root="$smoke_fixture_root/ngs-qc"
 phylogeny_fixture_root="$smoke_fixture_root/phylogeny"
 
 echo "[SMOKE] version and components"
-"$renderer" --version | grep -Fx "taffish-report-render 0.3.3-r1" >/dev/null
+"$renderer" --version | grep -Fx "taffish-report-render 0.4.0-r1" >/dev/null
 "$renderer" components | grep -F "native_subreport" >/dev/null
 "$renderer" components | grep -F "code_file" >/dev/null
 "$renderer" components | grep -F "structure_viewer" >/dev/null
@@ -59,6 +62,10 @@ echo "[SMOKE] version and components"
 
 echo "[SMOKE] unit, round-trip, and deterministic MIME contracts"
 python3 -m unittest discover -s "$app_root/tests" -p 'test_*.py'
+TAFFISH_REPORT_RENDER_BIN="$renderer" python3 "$app_root/tests/cli-help-smoke.py"
+
+echo "[SMOKE] independent hierarchical navigation CLI contract"
+TAFFISH_REPORT_RENDER_BIN="$renderer" python3 "$app_root/tests/toc-offline-smoke.py"
 
 echo "[SMOKE] real PNG, JPEG, WebP, and SVG MIME fixture"
 mime_root="$render_root/image-mime"
@@ -326,7 +333,7 @@ language_default = "zh"
 
 [project]
 flow_name = "media-layout-regression"
-flow_version = "0.3.3-r1"
+flow_version = "0.4.0-r1"
 analysis_mode = "component-regression"
 title.en = "Media Layout Regression"
 title.zh = "媒体布局回归测试"
@@ -915,7 +922,7 @@ language_default = "zh"
 
 [project]
 flow_name = "bio-viewer-smoke"
-flow_version = "0.3.3-r1"
+flow_version = "0.4.0-r1"
 analysis_mode = "bio-viewers"
 title.zh = "生信浏览器组件测试"
 title.en = "Bio Viewer Component Smoke"
@@ -1004,7 +1011,7 @@ language_default = "zh"
 
 [project]
 flow_name = "policy-smoke"
-flow_version = "0.3.3-r1"
+flow_version = "0.4.0-r1"
 analysis_mode = "native-subreport-policy"
 title.zh = "子报告策略测试"
 title.en = "Subreport Policy Smoke"

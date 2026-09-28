@@ -1,19 +1,10 @@
-taffish-report-render 0.3.3-r1
+taffish-report-render 0.4.0-r1
 
 Usage:
   taf-taffish-report-render COMMAND [OPTIONS]
 
 Purpose:
-  Build one standalone TAFFISH HTML report from:
-    1. report.toml or report.manifest.json
-    2. one local result root directory
-
-Main idea:
-  Write report structure in TOML.
-  Put real result files under --root.
-  Run render.
-
-  No hand-written HTML, JavaScript, CSS, or extra report code is needed.
+  Compile report.toml/JSON and one local result root into standalone HTML.
 
 Fastest test:
   taf-taffish-report-render new --outdir report-example
@@ -21,11 +12,7 @@ Fastest test:
   taf-taffish-report-render inspect-html report-example/04_reports/taffish_report.html --validate
 
 Render your own results:
-  Example result tree:
-    my-run/
-      03_results/...
-      04_reports/report.toml
-
+  Keep result assets under my-run/ and the spec at my-run/04_reports/report.toml.
   Commands:
     taf-taffish-report-render lint --spec my-run/04_reports/report.toml --root my-run
     taf-taffish-report-render render --spec my-run/04_reports/report.toml --root my-run --out my-run/04_reports/taffish_report.html --force --validate
@@ -68,6 +55,16 @@ Structured notes:
 Path rule:
   All source/image/path values are relative to --root.
   Absolute paths and paths escaping --root are rejected.
+  TAFFISH 0.11.0 needs a literal quoting layer for wrapper paths with spaces:
+  taf-taffish-report-render new --outdir '"report with spaces"'
+  Follow the escaped command printed by new. Use single-line paths; see README.
+  This workaround applies to all three backends; direct report-render uses normal argv.
+
+Navigation:
+  Sections accept toc.parent, toc.collapsed and bilingual toc.title.
+  All components accept toc.visible and toc.title; hidden entries keep body/anchors.
+  No toc configuration retains legacy navigation. Section hiding is unsupported.
+  explain/inspect-html --json and report_toc.json expose the resolved index.
 
 Detailed manuals:
   https://github.com/taffish/taffish-report-render/blob/main/docs/report-spec.en.md
@@ -83,3 +80,11 @@ Wrapper options:
 
 Notes:
   Non-option subcommands above go directly to the unified report-render CLI.
+  Select Docker, Podman or Apptainer using TAFFISH_CONTAINER_BACKEND, for example:
+  TAFFISH_CONTAINER_BACKEND=docker taf-taffish-report-render -- --version
+  TAFFISH_CONTAINER_BACKEND=podman taf-taffish-report-render -- --version
+  TAFFISH_CONTAINER_BACKEND=apptainer taf-taffish-report-render -- --version
+  Apptainer needs Linux and a writable personal cache or prepared SIF.
+  Reports work offline after image setup; keep output in a host-mounted directory.
+  Linux Docker: TAFFISH_DOCKER_RUN_ARGS="--user $(id -u):$(id -g)"
+  Set it alongside TAFFISH_CONTAINER_BACKEND=docker for user-owned outputs.

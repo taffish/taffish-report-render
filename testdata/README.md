@@ -49,7 +49,8 @@ NGS-QC/phylogeny 输入和明确标记的 NGL/IGV interface shim；它不读取�
 
 这些 fixture 还用于回归检查报告组件抽象本身：
 
-- section 生成一级目录，component 生成子目录，并能随滚动自动展开；
+- 未配置 toc 时，section/component 保留旧两层目录；0.4 显式目录配置则按稳定 ID
+  构树，独立折叠并将隐藏组件高亮映射到所属章节；两种模式均独立回归；
 - plot、table、native subreport 等不同组件各自使用固定布局，不能互相拉伸；
 - collection 组件只作为编译期便利写法，必须在测试中展开为普通 `plot_card`、
   `table_preview`、`code_file` 或 `native_subreport`，并写入 `report.normalized.json`；
@@ -200,8 +201,16 @@ tests/test-real-run-out/component-regression/rendered_reports.tsv
 ```
 
 `tests/test-real-run-out/` 已在 `.gitignore` 中忽略，只用于维护者本地人工视觉检查和回归对比。
-`tests/smoke.sh` 的临时输出固定写入 `tests/smoke-out/`，不能和真实报告回归共用目录，
-避免快速 smoke 清理时误删 full real-run 报告。
+`tests/smoke.sh` 默认写入 `tests/smoke-out/`，也可通过
+`TAFFISH_REPORT_RENDER_SMOKE_OUT` 指定全新路径；已有输出会拒绝，不自动删除。
+smoke 和真实报告回归不能共用目录。
+
+0.4 的目录场景由 `tests/toc_fixture.py` 生成无客户数据的人工长报告：19 个目标、
+190 个比对窗口、212 个组件；29 个可见、210 个隐藏目录节点（含自动章节）。
+`tests/toc-offline-smoke.py` 作为统一 smoke/镜像 manifest 调用的 helper 验证真实 CLI，
+`tests/browser-toc.cjs` 验证最终 HTML 的交互/截图。后者可在两个必需路径参数后继续传入
+legacy basic report 和 structured-notes report，补测原生子报告、旧导航、竖图与 lightbox。
+这些 helper 不另造 renderer、不用客户报告充当可公开的长报告示例。
 
 ## Fixture 覆盖能力
 
@@ -258,3 +267,15 @@ payload、表格交互、图片放大、语言列折叠、runtime payload 和 te
 即使历史 baseline 本身没有完全通过。
 
 fixture 只应在新增报告组件或真实 bug 需要代表性输入时增长。保持它们小而有目的。
+
+## 0.4.0 发布前复审补充
+
+- `test_cli_paths.py` 检查 new 打印命令的双层 quoting；真实 target wrapper 的空格、中文、
+  撇号、美元符号和分号路径另在 Docker/Podman/Apptainer 实测，不以纯字符串断言替代。
+- `test_toc.py` 覆盖固定与派生 DOM ID、前向/后向冲突、section/component/collection
+  冲突和内部 ID 的 HTML 篡改；`test_smoke_diagnostics.py` 注入 exit 42 与长 stderr。
+- `cli-help-smoke.py` 独立检查主命令和 render help；Bash 是 quoted container heredoc
+  的真实依赖，manifest 有独立 exist 与版本执行路径，浏览器不进入 Dockerfile。
+- media real-run fixture 的结构图是 SVG，必须保留 `.svg` 后缀。不得将 SVG 内容复制成
+  `.png` 后只检查文件存在或 data URI 前缀；浏览器需确认 naturalWidth、decode 与布局。
+- 历史失败、修复前镜像与最终候选证据分开保存；最终发布判断只绑定修复后源码/OCI/SIF。

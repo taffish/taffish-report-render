@@ -1822,7 +1822,7 @@ render_component_media_layout() {
     mkdir -p "$source_root/03_results/figures" "$source_root/04_reports" "$(dirname "$spec")"
     cp "$phylogeny_image" "$source_root/03_results/figures/phylogeny-rectangular-tree.png"
     cp "$rnaseq_image" "$source_root/03_results/figures/rnaseq-de-heatmap.png"
-    cp "$structure_image" "$source_root/03_results/figures/pufa-structure-confidence.png"
+    cp "$structure_image" "$source_root/03_results/figures/pufa-structure-confidence.svg"
 
     cat > "$source_root/04_reports/flow_summary.tsv" <<'TSV'
 metric	value
@@ -1869,7 +1869,7 @@ default_fit = "contain"
 [[sections.components]]
 type = "plot_card"
 id = "media-right-portrait"
-image = "03_results/figures/pufa-structure-confidence.png"
+image = "03_results/figures/pufa-structure-confidence.svg"
 layout = "media"
 image_position = "right"
 media_image_ratio = 0.30
@@ -1970,7 +1970,8 @@ TOML
     grep -F 'plot-card-wide' "$report" >/dev/null
     grep -F 'phylogeny-rectangular-tree.png' "$files_index" >/dev/null
     grep -F 'rnaseq-de-heatmap.png' "$files_index" >/dev/null
-    grep -F 'pufa-structure-confidence.png' "$files_index" >/dev/null
+    grep -F 'pufa-structure-confidence.svg' "$files_index" >/dev/null
+    grep -F 'data:image/svg+xml;base64,' "$report" >/dev/null
 }
 
 render_component_image_mime() {

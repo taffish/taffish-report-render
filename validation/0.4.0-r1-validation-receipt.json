@@ -1,0 +1,283 @@
+{
+  "schema_version": "taffish.report-render.validation-receipt/v1.0.0",
+  "package": "taffish-report-render",
+  "version": "0.4.0-r1",
+  "date": "2026-09-29",
+  "release_decision": "publish_ready_not_published",
+  "publish_executed": false,
+  "install_executed": false,
+  "evidence_root": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929",
+  "supersedes": "20260928 候选回执；旧 publish_ready 经独立复审撤回。本次修复后重新闭合，失败记录保留。",
+  "source": {
+    "base_tag": "v0.3.3-r1",
+    "base_commit": "cac961ed0bbbce42425136e69949e9006ccd1093",
+    "feature_task_start_clean": true,
+    "repair_start": "dirty unpublished candidate from same authorized task",
+    "source_inventory": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/source-inventory.json",
+    "source_inventory_sha256": "ff1da4528da3e00e95b1ba7ab38a862c8c0d547a6d83c6e475005b6fdc20600e",
+    "snapshot_sha256": "ca64f5820ce27679e9dad6c0bbb49c5acb22b56c78f34910d9a4b5eb9c1e8c28",
+    "snapshot_exclusion": "本机器回执自身（避免自引用）、忽略的生成数据与 .git；release.md 显式保留",
+    "image_input_inventory_sha256": "35799895dbc91201dd5d699d73d3827e1b7b86f76cf90d4d938048ab73981ee5",
+    "tracked_diff_sha256": "f38d28d0e88f9f73d0cdf56c5bcfaadfa52ee2d04b032189924ca408c9614c25"
+  },
+  "workflow": {
+    "feature_start_sha256": "10a98713b519ea02008e69b916df1608d1c811ee435b7b5887f66b0293018a55",
+    "repair_start_fresh_final_sha256": "c1f2fa9d87561bb49447ce346dcb2d4d246fa0b1196d02eca10df6afbe5f12ca",
+    "fresh_taf": "0.11.0",
+    "cmp_exit": 0,
+    "feature_change": "verified historical canonical to fresh canonical whole-file replacement",
+    "repair_change": "none",
+    "mode": "100644",
+    "context": ".",
+    "dockerfile": "docker/Dockerfile",
+    "native_runners": [
+      "ubuntu-24.04",
+      "ubuntu-24.04-arm"
+    ],
+    "github_actions_executed": false
+  },
+  "contract": {
+    "schema_version": "0.1",
+    "template_version": "taffish-flow-report-render-0.4",
+    "no_toc_behavior": "legacy",
+    "section_toc": [
+      "parent",
+      "collapsed",
+      "title"
+    ],
+    "component_toc": [
+      "visible",
+      "title"
+    ],
+    "maximum_section_depth": 64,
+    "section_hiding": "rejected",
+    "fixed_and_derived_dom_ids": "preflight rejects collisions; no silent rewriting",
+    "deferred": [
+      "search",
+      "collapse persistence",
+      "initial depth",
+      "component defaults",
+      "automatic numbering"
+    ]
+  },
+  "tests": {
+    "unit_count": 36,
+    "source_smoke": "PASS",
+    "real_run_count": 14,
+    "real_run": "PASS after SVG fixture repair",
+    "backend_matrix": {
+      "docker-arm64-strict": {
+        "status": "PASS",
+        "probes": 52,
+        "max_wall_seconds": 3.836,
+        "receipt": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/docker-arm64-strict/receipt.json"
+      },
+      "docker-amd64-strict2": {
+        "status": "PASS",
+        "probes": 52,
+        "max_wall_seconds": 9.933,
+        "receipt": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/docker-amd64-strict2/receipt.json"
+      },
+      "podman-amd64-strict": {
+        "status": "PASS",
+        "probes": 52,
+        "max_wall_seconds": 11.198,
+        "receipt": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/podman-amd64-strict/receipt.json"
+      },
+      "apptainer-amd64-strict": {
+        "status": "PASS",
+        "probes": 26,
+        "max_wall_seconds": 10.864,
+        "receipt": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/apptainer-amd64-strict/receipt.json"
+      }
+    },
+    "final_probe_count": 182,
+    "container_timeout_seconds": 60,
+    "exist": 3,
+    "manifest_tests": 22,
+    "source_body_compatibility": {
+      "baseline": "v0.3.3-r1",
+      "candidate": "0.4.0-r1",
+      "byte_identical": true,
+      "body_bytes": 897695,
+      "body_sha256": "a2dfc48f06ae0040dd1776a4b492a2bac2c02df9a0baff9fce59432a0e852196"
+    },
+    "independent_image_smoke": "36 units plus installed CLI MIME/TOC fixtures; no source/production bind",
+    "negative_image_probes": {
+      "status": "PASS",
+      "anchor_cli_negatives": 6,
+      "render_without_validate_rejected": true,
+      "smoke_child_original_exit": 42,
+      "real_diagnostic_visible": true
+    },
+    "mime_core_images": 5,
+    "mime_fungal_equivalent_images": 8,
+    "webp": "data:image/webp;base64,",
+    "synthetic": {
+      "targets": 19,
+      "windows": 190,
+      "components": 212,
+      "visible_toc": 29,
+      "hidden_toc": 210,
+      "lint_errors": 0,
+      "lint_warnings": 0,
+      "roundtrip": "PASS",
+      "body_assets_preserved": "PASS"
+    }
+  },
+  "wrapper": {
+    "taffish": "0.11.0",
+    "entry": "two-line quoted container heredoc; bundled Bash 5.3.9-r1",
+    "matrix": {
+      "wrapper-docker-arm64-final": {
+        "status": "PASS",
+        "calls": 25,
+        "receipt": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/wrapper-docker-arm64-final/receipt.json"
+      },
+      "xjp-wrapper-final/wrapper-docker": {
+        "status": "PASS",
+        "calls": 25,
+        "receipt": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/xjp-wrapper-final/wrapper-docker/receipt.json"
+      },
+      "xjp-wrapper-final/wrapper-podman": {
+        "status": "PASS",
+        "calls": 25,
+        "receipt": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/xjp-wrapper-final/wrapper-podman/receipt.json"
+      },
+      "xjp-wrapper-final/wrapper-apptainer-final2": {
+        "status": "PASS",
+        "calls": 25,
+        "receipt": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/xjp-wrapper-final/wrapper-apptainer-final2/receipt.json"
+      }
+    },
+    "total_calls": 100,
+    "actual_bind": "PASS",
+    "readonly_input_rejected": "PASS",
+    "input_hash_unchanged": "PASS",
+    "output_ownership": "host uid (xjp uid/gid 1001; Docker explicit --user)",
+    "paths": [
+      "simple",
+      "spaces",
+      "Unicode",
+      "apostrophe dollar semicolon substitution literal"
+    ],
+    "plain_argv": "NOT FIXED in TAFFISH 0.11.0; documented literal-quoting workaround passed on all backends",
+    "newline_paths": "unsupported through wrapper; direct container argv alternative",
+    "bundle_sha256": "b673f981c07a13ff1dbfcc36b7861f7b0cfd97e0d851a4d2e20e203b08b59a5e"
+  },
+  "browser": {
+    "browser": "154.0.8037.57",
+    "report": "/private/tmp/taffish-report-040-repair.y3efXQ/long-output-final/report.html",
+    "checks": [
+      "initial collapsed chapter and hidden windows",
+      "deep hidden anchor opens all ancestors",
+      "independent collapse never hides body",
+      "link versus toggle, keyboard and history",
+      "1600 zh layout and active owner",
+      "1600 en layout and active owner",
+      "1280 zh layout and active owner",
+      "1280 en layout and active owner",
+      "390 zh layout and active owner",
+      "390 en layout and active owner",
+      "200 percent equivalent reflow at 640 CSS pixels",
+      "print does not inherit toc collapse",
+      "legacy navigation and native subreport interaction",
+      "portrait media and lightbox compatibility"
+    ],
+    "errors": [],
+    "remote": [],
+    "print_scope": "body visibility; full pagination acceptance separate"
+  },
+  "print": {
+    "zh": {
+      "pages": 101,
+      "alignment_window_titles": 190,
+      "all_19_targets_present": true,
+      "sha256": "6ac6921eae650de2fcb605b96ebcdf09393ce19c7ab5b84114d23360b0d75f66"
+    },
+    "en": {
+      "pages": 103,
+      "alignment_window_titles": 190,
+      "all_19_targets_present": true,
+      "sha256": "ffae560564d0ab4acbf925d6df0f47da33b1f44098c574365c4ede817d020832"
+    },
+    "visual_scope": "中英样张检查；完整逐页分页美术验收未声明 PASS。目录折叠/隐藏不丢正文。"
+  },
+  "remote": {
+    "host": "xjp",
+    "uid": 1001,
+    "architecture": "x86_64",
+    "docker": "26.1.5+dfsg1",
+    "podman": "5.4.2",
+    "apptainer": "1.5.3",
+    "private_root": "/tmp/taffish-report-040-repair.cI2JmI",
+    "mode": "0700",
+    "sudo_or_system_install": false,
+    "shared_permissions_modified": false,
+    "private_root_and_final_test_image_cleanup": "PASS",
+    "oci_archive_sha256": "504c4d395c97a0ac0033852861f00f72821bf7372dd819461676325b6289a488",
+    "sif_sha256": "f55ad64f505c12a1b1289b76baf62191ef35b4307ad9a1c83f74a827629899e2",
+    "wrapper_evidence_archive_sha256": "9608251d1932a2ee5f36fc9b990db4e6bba4f1da2797992e5f2da54241d5b350"
+  },
+  "images": {
+    "arm64": {
+      "id": "sha256:dc4becb03125789eeadf82dc758c723ace8b6301e06fb096ca1e1174e3341b95",
+      "size_bytes": 57350381,
+      "architecture": "arm64",
+      "build_context": ".",
+      "build": "native",
+      "native_runtime": "PASS",
+      "profile": "image inspect/history/du; no pip/ensurepip/Python headers/APK cache payload; Bash retained as runtime"
+    },
+    "amd64": {
+      "id": "sha256:1a5a6cfc5cd4411abfb81bc81d8b77cb458ba9de6e0e654ff03ea5e2ba38c9af",
+      "size_bytes": 50840616,
+      "architecture": "amd64",
+      "build_context": ".",
+      "build": "emulated on arm64",
+      "native_runtime": "PASS",
+      "profile": "image inspect/history/du; no pip/ensurepip/Python headers/APK cache payload; Bash retained as runtime"
+    }
+  },
+  "gates": {
+    "taf_check": "PASS",
+    "taf_build": "PASS",
+    "docs_checker": "PASS",
+    "help_lines": 90,
+    "git_diff_check": "PASS",
+    "hubctl": "first-party candidate ahead of published v0.3.3-r1",
+    "publish_dry_run": "remote checked, planned only",
+    "target_clean": "PASS",
+    "target_entries": [
+      ".gitkeep"
+    ],
+    "git_status_short_target": "",
+    "target_backup": "docs-for-codex/report-render-evidence/0.4.0-r1-repair-20260929/target-final-backup"
+  },
+  "resources": {
+    "database_or_model_catalog": "N/A; user project assets, no shared runtime downloader requirement",
+    "small_bundled_runtimes": "pinned NGL/IGV/ECharts/Plotly; notices retained",
+    "bash_license": "GPL-3.0-or-later",
+    "bash_aports_commit": "1522c3193610902d8493f9790a2755c11f21f26d",
+    "app_license": "Apache-2.0",
+    "gui": "static interactive HTML; service/noVNC/ports/process supervision N/A"
+  },
+  "limitations": [
+    "amd64 build emulated locally, native runtime xjp; unpublished GitHub Actions not executed",
+    "arm64 Podman/Apptainer not separately validated; independent platform/backend axes closed",
+    "Chromium only; complete 204-page pagination/art acceptance not claimed",
+    "ordinary argv quoting not fixed in core; tested documented workaround for single-line paths",
+    "downstream cpu5 deployment, non-overwriting scientific candidates and scientific acceptance separate",
+    "fresh Bash build depends on pinned Alpine branch serving exact revision; tested OCI archive retained"
+  ],
+  "preserved_diagnostics": [
+    "previous three-blocker independent audit",
+    "missing Bash on punctuation wrapper path",
+    "SVG fixture mislabelled PNG",
+    "scratch parent missing in initial SIF controller",
+    "wrong Apptainer env var in first wrapper harness",
+    "lint error-code expectation corrected (1, not 2)",
+    "SSH exit255 without output; full Docker group rerun passed",
+    "SFTP interrupted; standard SCP archive SHA matched"
+  ]
+}

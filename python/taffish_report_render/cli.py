@@ -12,6 +12,7 @@ import math
 import mimetypes
 import os
 import re
+import shlex
 import sys
 import tomllib
 from dataclasses import dataclass, field
@@ -22,6 +23,8 @@ from typing import Any
 from urllib.parse import quote
 
 from . import __version__
+from .anchors import child_anchor
+from .toc import build_toc_index, inspect_toc_html, render_toc, validate_toc
 from .components import (
     COMPONENT_DOC_EXTENSIONS,
     COMPONENT_REGISTRY_EXTENSIONS,
@@ -32,7 +35,7 @@ from .components import (
 )
 
 
-TEMPLATE_VERSION = "taffish-flow-report-render-0.3"
+TEMPLATE_VERSION = "taffish-flow-report-render-0.4"
 RENDER_COMPONENTS = [
     "dashboard_cards",
     "status_grid",
@@ -281,6 +284,7 @@ COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
 COMPONENT_REGISTRY.update(COMPONENT_REGISTRY_EXTENSIONS)
 for _component_info in COMPONENT_REGISTRY.values():
     _fields = _component_info.setdefault("fields", [])
+    _fields.append("toc")
     if "note_items" not in _fields:
         try:
             _fields.insert(_fields.index("note") + 1, "note_items")
@@ -1349,6 +1353,8 @@ def scalar_override(component: dict[str, Any], target: dict[str, Any], keys: lis
 
 
 def copy_collection_note_items(component: dict[str, Any], target: dict[str, Any]) -> None:
+    if "toc" in component:
+        target["toc"] = json.loads(json.dumps(component["toc"], ensure_ascii=False))
     if "note_items" in component:
         target["note_items"] = json.loads(json.dumps(component["note_items"], ensure_ascii=False))
 
@@ -1643,6 +1649,10 @@ def validate_spec(spec: dict[str, Any], allow_collections: bool = True) -> None:
                 languages,
             )
             validate_component_required_fields(component, f"component {section_id}.{component_id}")
+    try:
+        validate_toc(spec, slug, languages)
+    except ValueError as exc:
+        raise RenderError(str(exc)) from exc
 
 
 def normalize_spec(spec: dict[str, Any], root: Path | None = None) -> dict[str, Any]:
@@ -1663,7 +1673,11 @@ def normalize_spec(spec: dict[str, Any], root: Path | None = None) -> dict[str, 
         for cidx, component in enumerate(section.get("components", []), start=1):
             component["id"] = slug(str(component.get("id") or f"{section['id']}-{component.get('type', 'component')}-{cidx}"))
             if component.get("type") in COLLECTION_COMPONENTS and root is not None:
-                expanded_components.extend(expand_collection_component(component, root))
+                expanded = expand_collection_component(component, root)
+                expanded_components.extend(expanded)
+                if not expanded and "toc" in component:
+                    # 空 collection 仍须保留显式启用新目录模式的意图。
+                    section.setdefault("toc", {})
             else:
                 expanded_components.append(component)
         section["components"] = expanded_components
@@ -1932,7 +1946,7 @@ def render_code_file(component: dict[str, Any], ctx: RenderContext) -> str:
     if copy_enabled:
         copy_button = (
             '<button class="copy-code-button" type="button" data-copy-code '
-            f'data-copy-target="{escape(component["id"], quote=True)}-code">'
+            f'data-copy-target="{escape(child_anchor(component["id"], "code"), quote=True)}">'
             f'{label("Copy", "复制")}</button>'
         )
     truncated_note = ""
@@ -1950,7 +1964,7 @@ def render_code_file(component: dict[str, Any], ctx: RenderContext) -> str:
         f"{copy_button}"
         "</div>"
         f'{render_note_block(component, fallback=note, classes="code-file-note component-note-block")}'
-        f'<pre class="code-file-pre"><code id="{escape(component["id"], quote=True)}-code" data-code-language="{escape(syntax, quote=True)}">{escape(text)}</code></pre>'
+        f'<pre class="code-file-pre"><code id="{escape(child_anchor(component["id"], "code"), quote=True)}" data-code-language="{escape(syntax, quote=True)}">{escape(text)}</code></pre>'
         f"{truncated_note}"
         "</article>"
     )
@@ -2341,7 +2355,7 @@ def render_tree_viewer(component: dict[str, Any], ctx: RenderContext) -> str:
         f'<a class="tree-action-link" href="{escape(source_href)}" target="_blank" rel="noopener">{label("Open source", "打开源文件")}</a>'
         "</div>"
         f'<details class="tree-source"><summary>{label("Show embedded Newick", "查看内嵌 Newick")}</summary>'
-        f'<pre><code id="{escape(component_id, quote=True)}-newick">{escape(text)}</code></pre></details>'
+        f'<pre><code id="{escape(child_anchor(component_id, "newick"), quote=True)}">{escape(text)}</code></pre></details>'
         "</article>"
     )
 
@@ -2532,7 +2546,7 @@ def render_sequence_alignment(component: dict[str, Any], ctx: RenderContext) -> 
         f'<a class="alignment-action-link" href="{escape(source_href)}" target="_blank" rel="noopener">{label("Open source", "打开源文件")}</a>'
         "</div>"
         f'<details class="alignment-source"><summary>{label("Show embedded alignment text", "查看内嵌比对文本")}</summary>'
-        f'<pre><code id="{escape(component_id, quote=True)}-alignment">{escape(text)}</code></pre></details>'
+        f'<pre><code id="{escape(child_anchor(component_id, "alignment"), quote=True)}">{escape(text)}</code></pre></details>'
         "</article>"
     )
 
@@ -2948,8 +2962,8 @@ def render_interactive_plot(component: dict[str, Any], ctx: RenderContext) -> st
     controls_open = bool_value(component.get("controls_open"), False)
     controls_attr = " open" if controls_open else ""
     defaults = payload["defaults"]
-    point_output_id = f"{component_id}-point-size-output"
-    opacity_output_id = f"{component_id}-opacity-output"
+    point_output_id = child_anchor(component_id, "point-size-output")
+    opacity_output_id = child_anchor(component_id, "opacity-output")
     common_controls = (
         '<label class="interactive-plot-control interactive-plot-control-inline">'
         f'<span>{label("Point size", "点大小")} <output id="{escape(point_output_id)}">{escape(str(defaults["pointSize"]))}</output></span>'
@@ -3369,7 +3383,7 @@ def render_structure_viewer(component: dict[str, Any], ctx: RenderContext) -> st
         static_path = resolve_path(ctx.root, static_rel)
         record_asset(ctx, "image", component_id, static_rel, static_path)
         static_src = data_uri(static_path)
-        static_id = f"{component_id}-static"
+        static_id = child_anchor(component_id, "static")
         static_title = {"en": "Static structure figure", "zh": "静态结构图"}
         static_raw_href = report_relative_href(ctx, static_path, static_rel)
         static_html = (
@@ -3853,7 +3867,7 @@ def render_report(spec: dict[str, Any], root: Path, spec_path: Path | None = Non
     language_default = manifest["language_default"]
     set_active_languages(languages, language_default)
     css = load_asset_text("report.css") + "\n" + language_visibility_css(languages)
-    js = load_asset_text("report.js")
+    js = load_asset_text("report.js") + "\n" + load_asset_text("toc.js")
     logo = f'<img src="{escape(data_uri_from_bytes(load_asset_bytes("taffish-logo.png"), "image/png"))}" alt="TAFFISH logo">'
     project = manifest["project"]
     sections_html = []
@@ -3872,6 +3886,14 @@ def render_report(spec: dict[str, Any], root: Path, spec_path: Path | None = Non
     nav.append(f'<a href="#deliverables">{i18n({"en": "Deliverables", "zh": "交付文件"})}</a>')
     sections_html.append(render_deliverables(spec_suffix))
     nav.append(f'<a href="#provenance">{i18n({"en": "Provenance", "zh": "溯源信息"})}</a>')
+    toc_index = build_toc_index(manifest)
+    if toc_index["mode"] == "tree":
+        toc_titles = {node["id"]: i18n(node["title"]) for node in toc_index["nodes"]}
+        for section in manifest["sections"]:
+            for component in section.get("components", []):
+                if "title" not in component.get("toc", {}):
+                    toc_titles[component["id"]] = component_nav_title(component)
+        nav = [render_toc(toc_index, toc_titles, label)]
     payload_json = script_safe_json(ctx.embedded_payloads)
     meta_items = [
         ("Flow", project.get("flow_name", "")),
@@ -3927,7 +3949,7 @@ def render_report(spec: dict[str, Any], root: Path, spec_path: Path | None = Non
       <div class="language-switch" aria-label="Language">
         {language_buttons}
       </div>
-      <nav class="section-nav" aria-label="Report sections">
+      <nav class="section-nav" aria-label="Report sections" data-toc-mode="{toc_index['mode']}">
         {"".join(nav)}
       </nav>
       <div class="sidebar-external" aria-label="TAFFISH links">
@@ -3952,6 +3974,7 @@ def render_report(spec: dict[str, Any], root: Path, spec_path: Path | None = Non
       </section>
       {render_interaction_shells()}
       <script type="application/json" id="embedded-subreports-data">{payload_json}</script>
+      <script type="application/json" id="report-toc-data">{script_safe_json(toc_index)}</script>
       <footer class="report-footer">
         <p>{i18n({"en": "Generated by taffish-report-render.", "zh": "由 taffish-report-render 生成。"})}</p>
         <p>Template: TAFFISH flow-report {escape(TEMPLATE_VERSION)}. Report flow: {escape(str(project.get("flow_name", "")))} {escape(str(project.get("flow_version", "")))}.</p>
@@ -4054,6 +4077,9 @@ def write_config_outputs(spec_path: Path, report_dir: Path, manifest: dict[str, 
 def write_indexes(out: Path, manifest: dict[str, Any], ctx: RenderContext) -> None:
     report_dir = out.parent
     report_dir.mkdir(parents=True, exist_ok=True)
+    toc_path = report_dir / "report_toc.json"
+    toc_path.write_text(json.dumps(build_toc_index(manifest), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    record_generated_file(ctx, "config", "renderer-toc", toc_path.name, toc_path)
     layout_index = report_dir / "report_layouts.tsv"
     with layout_index.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle, delimiter="\t")
@@ -4191,7 +4217,7 @@ def lint_spec(spec: dict[str, Any], root: Path | None = None, strict: bool = Fal
             check_text_languages(issues, section.get("note"), f"sections.{section_id}.note", languages)
         check_long_unstructured_note(issues, section, f"sections.{section_id}.note", languages)
         components = section.get("components", [])
-        if not components:
+        if not components and not any(s.get("toc", {}).get("parent") == section_id for s in manifest.get("sections", [])):
             add_issue(issues, "warn", f"sections.{section_id}", "section has no components")
         for component in components:
             component_count += 1
@@ -4306,6 +4332,7 @@ def explain_manifest(manifest: dict[str, Any], root: Path | None = None) -> dict
         )
     return {
         "schema_version": manifest.get("schema_version"),
+        "toc": build_toc_index(manifest),
         "template": manifest.get("template"),
         "template_version": manifest.get("template_version"),
         "project": manifest.get("project", {}),
@@ -4327,6 +4354,7 @@ def report_json_schema() -> dict[str, Any]:
         properties: dict[str, Any] = {
             "type": {"const": name},
             "id": {"type": "string"},
+            "toc": {"$ref": "#/$defs/componentToc"},
             "title": {"$ref": "#/$defs/i18nText"},
             "note": {"$ref": "#/$defs/i18nText"},
             "note_items": {
@@ -4492,6 +4520,26 @@ def report_json_schema() -> dict[str, Any]:
             },
         },
         "$defs": {
+            "tocI18nText": {
+                "type": "object", "minProperties": 1,
+                "additionalProperties": {"type": "string", "minLength": 1, "pattern": "\\S"},
+                "description": "Non-empty plain text for every declared report language; cross-field coverage is checked by validate-spec.",
+            },
+            "sectionToc": {
+                "type": "object", "additionalProperties": False,
+                "properties": {
+                    "parent": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9_.-]+$"},
+                    "collapsed": {"type": "boolean"},
+                    "title": {"$ref": "#/$defs/tocI18nText"},
+                },
+            },
+            "componentToc": {
+                "type": "object", "additionalProperties": False,
+                "properties": {
+                    "visible": {"type": "boolean"},
+                    "title": {"$ref": "#/$defs/tocI18nText"},
+                },
+            },
             "i18nText": {
                 "type": "object",
                 "properties": {lang: {"type": "string"} for lang in LANGUAGE_NAMES},
@@ -4533,6 +4581,7 @@ def report_json_schema() -> dict[str, Any]:
                 "required": ["title"],
                 "properties": {
                     "id": {"type": "string"},
+                    "toc": {"$ref": "#/$defs/sectionToc"},
                     "kind": {"type": "string"},
                     "title": {"$ref": "#/$defs/i18nText"},
                     "note": {"$ref": "#/$defs/i18nText"},
@@ -4578,6 +4627,16 @@ def toml_write_i18n(lines: list[str], prefix: str, value: Any) -> None:
         lines.append(f"{prefix} = {toml_scalar(value)}")
 
 
+def toml_write_toc(lines: list[str], toc: dict[str, Any]) -> None:
+    for key, value in toc.items():
+        if key == "title":
+            toml_write_i18n(lines, "toc.title", value)
+        else:
+            lines.append(f"toc.{key} = {toml_scalar(value)}")
+    if not toc:
+        lines.append("toc = {}")
+
+
 def toml_write_note_items(lines: list[str], table_path: str, note_items: Any) -> None:
     if not isinstance(note_items, list):
         return
@@ -4618,7 +4677,9 @@ def dump_toml_spec(manifest: dict[str, Any]) -> str:
         for key, value in section.items():
             if key in {"components", "note_items"}:
                 continue
-            if isinstance(value, dict):
+            if key == "toc":
+                toml_write_toc(lines, value)
+            elif isinstance(value, dict):
                 toml_write_i18n(lines, key, value)
             else:
                 lines.append(f"{key} = {toml_scalar(value)}")
@@ -4629,7 +4690,9 @@ def dump_toml_spec(manifest: dict[str, Any]) -> str:
             for key, value in component.items():
                 if key == "note_items":
                     continue
-                if isinstance(value, dict):
+                if key == "toc":
+                    toml_write_toc(lines, value)
+                elif isinstance(value, dict):
                     toml_write_i18n(lines, key, value)
                 else:
                     lines.append(f"{key} = {toml_scalar(value)}")
@@ -4639,6 +4702,10 @@ def dump_toml_spec(manifest: dict[str, Any]) -> str:
 
 def html_summary(path: Path) -> dict[str, Any]:
     html = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        toc_index = inspect_toc_html(html)
+    except (ValueError, KeyError, TypeError) as exc:
+        raise RenderError(f"html inspection failed; toc: {exc}") from exc
     image_data_uri_mimes = main_document_image_data_uri_mimes(html)
     payload_match = re.search(r'<script[^>]+id="embedded-subreports-data"[^>]*>(.*?)</script>', html, re.I | re.S)
     payload_count = 0
@@ -4649,6 +4716,7 @@ def html_summary(path: Path) -> dict[str, Any]:
             payload_count = -1
     return {
         "path": str(path),
+        "toc": toc_index,
         "bytes": path.stat().st_size,
         "template": "taffish-flow-report" if 'data-template="taffish-flow-report"' in html else "",
         "data_image_count": html.count("data:image/"),
@@ -5012,10 +5080,13 @@ def command_new(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
     print(f"created demo workspace: {outdir}")
+    # TAFFISH 0.11.0 joins *ARGV* as shell text. Preserve one quoting layer
+    # through the invoking shell; this is not needed for direct report-render.
+    render_args = ["render", "--spec", str(outdir / "report.toml"), "--root", str(outdir),
+                   "--out", str(reports_dir / "report.html"), "--force", "--validate"]
     print(
         "render with: "
-        f"taf-taffish-report-render render --spec {outdir / 'report.toml'} "
-        f"--root {outdir} --out {reports_dir / 'report.html'} --force --validate"
+        + shlex.join(["taf-taffish-report-render", *map(shlex.quote, render_args)])
     )
     return 0
 
@@ -5034,6 +5105,10 @@ def main_document_image_data_uri_mimes(html: str) -> list[str]:
 
 def validate_html_file(path: Path) -> None:
     html = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        inspect_toc_html(html, validate=True)
+    except (ValueError, KeyError, TypeError) as exc:
+        raise RenderError(f"html validation failed; toc: {exc}") from exc
     required = [
         'data-template="taffish-flow-report"',
         "report-shell",

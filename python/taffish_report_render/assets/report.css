@@ -244,6 +244,23 @@ h3,
   box-shadow: inset 3px 0 0 var(--teal);
 }
 
+/* 0.4 的目录树只管理导航的可见性，不影响正文或打印内容。 */
+.toc-tree, .toc-tree ul { list-style: none; padding: 0; margin: 0; min-width: 0; }
+.toc-tree ul { margin-left: 8px; padding-left: 5px; border-left: 1px solid var(--line); }
+.toc-tree ul ul ul ul { margin-left: 0; padding-left: 0; border-left: 0; }
+.toc-tree li, .toc-row { min-width: 0; }
+.toc-tree [hidden] { display: none !important; }
+.toc-row { display: flex; align-items: flex-start; gap: 2px; }
+.toc-row > a { flex: 1 1 0; overflow-wrap: anywhere; }
+.toc-toggle { flex: 0 0 30px; width: 30px; min-height: 32px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--deep); cursor: pointer; }
+.toc-toggle > span:first-child { display: inline-block; }
+.toc-toggle[aria-expanded="true"] > span:first-child { transform: rotate(90deg); }
+.toc-controls { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.toc-controls button { border: 1px solid var(--line); background: #fff; border-radius: 5px; padding: 5px 8px; cursor: pointer; color: var(--deep); }
+.toc-tree a:focus-visible, .toc-toggle:focus-visible, .toc-controls button:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+.toc-tree a.toc-active-ancestor { border-color: var(--line); }
+.toc-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
 .sidebar-external {
   display: grid;
   gap: 7px;
