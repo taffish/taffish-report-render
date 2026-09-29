@@ -1,4 +1,4 @@
-taffish-report-render 0.4.0-r1
+taffish-report-render 0.4.1-r1
 
 Usage:
   taf-taffish-report-render COMMAND [OPTIONS]
@@ -45,7 +45,6 @@ Plot layouts:
   Compact media folds at component widths 900px and 620px.
   Folded portrait images stay centered at natural width with a screen cap.
   PNG, JPEG, WebP, and SVG use deterministic renderer-owned MIME mappings.
-  See the component manual for validated media ratios and alignment fields.
 
 Structured notes:
   Sections and every fixed component support note_items with validated kinds,
@@ -61,9 +60,10 @@ Path rule:
   This workaround applies to all three backends; direct report-render uses normal argv.
 
 Navigation:
+  Reading-follow is the default, including hierarchical and filtered TOCs.
   Sections accept toc.parent, toc.collapsed and bilingual toc.title.
   All components accept toc.visible and toc.title; hidden entries keep body/anchors.
-  No toc configuration retains legacy navigation. Section hiding is unsupported.
+  Report-level [toc] interaction = "manual" opts into independent collapse controls.
   explain/inspect-html --json and report_toc.json expose the resolved index.
 
 Detailed manuals:

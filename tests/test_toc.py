@@ -13,6 +13,57 @@ from toc_fixture import make_spec, write_fixture, text
 
 
 class TocTests(unittest.TestCase):
+    def test_report_interaction_is_explicit_and_independent(self):
+        for config, expected in ((None, "follow"), ({}, "follow"), ({"interaction": "follow"}, "follow"), ({"interaction": "manual"}, "manual")):
+            spec = make_spec(1, 1)
+            if config is not None: spec["toc"] = config
+            validate_spec(spec)
+            self.assertEqual(build_toc_index(normalize_spec(spec))["interaction"], expected)
+            self.assertEqual(normalize_spec(tomllib.loads(dump_toml_spec(spec))), normalize_spec(spec))
+            for section in spec["sections"]:
+                section.pop("toc", None)
+                for component in section["components"]: component.pop("toc", None)
+            index = build_toc_index(normalize_spec(spec))
+            self.assertEqual(index["interaction"], expected)
+            self.assertEqual(index["mode"], "tree" if expected == "manual" else "legacy")
+        schema = report_json_schema()
+        self.assertFalse(schema["$defs"]["reportToc"]["additionalProperties"])
+        self.assertEqual(schema["$defs"]["reportToc"]["properties"]["interaction"]["enum"], ["follow", "manual"])
+        for config in (None, False, [], "manual", {"interaction": None}, {"interaction": []},
+                       {"interaction": "tree"}, {"interaction": True}, {"interation": "follow"}, {"visible": False}):
+            spec = make_spec(1, 1)
+            spec["toc"] = config
+            with self.subTest(config=config), self.assertRaises(RenderError): validate_spec(spec)
+
+    def test_modes_have_identical_body_and_distinct_controls(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "input"
+            spec = write_fixture(root, 2, 2)
+            follow, follow_ctx, _ = render_report(spec, root)
+            self.assertNotIn('class="toc-toggle"', follow)
+            self.assertNotIn('class="toc-controls"', follow)
+            self.assertIn('data-toc-branch="positions"', follow)
+            spec["toc"] = {"interaction": "manual"}
+            manual, manual_ctx, _ = render_report(spec, root)
+            self.assertIn('class="toc-toggle"', manual)
+            self.assertIn('class="toc-controls"', manual)
+            start, end = '<section class="section" id="overview"', '<section class="section" id="deliverables"'
+            self.assertEqual(follow.split(start)[1].split(end)[0], manual.split(start)[1].split(end)[0])
+            self.assertEqual([vars(a) for a in follow_ctx.assets], [vars(a) for a in manual_ctx.assets])
+            for html, interaction in ((follow, "follow"), (manual, "manual")):
+                self.assertEqual(inspect_toc_html(html, validate=True)["interaction"], interaction)
+                with self.assertRaisesRegex(ValueError, "interaction"):
+                    inspect_toc_html(html.replace(f'data-toc-interaction="{interaction}"', 'data-toc-interaction="bad"'), validate=True)
+            # 0.4.0 的旧 v1 诊断索引仍可 inspect，不补写新的交互配置。
+            import re
+            old_index = inspect_toc_html(manual)
+            old_index["version"] = 1
+            del old_index["interaction"]
+            old_html = re.sub(r'(<script[^>]+id="report-toc-data"[^>]*>)(.*?)(</script>)',
+                              lambda m: m[1] + json.dumps(old_index) + m[3], manual, flags=re.S)
+            old_html = old_html.replace(' data-toc-interaction="manual"', '')
+            self.assertEqual(inspect_toc_html(old_html, validate=True), old_index)
+
     def test_roundtrip_and_schema(self):
         spec = make_spec(2, 2)
         validate_spec(spec)

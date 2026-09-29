@@ -31,7 +31,7 @@ RUN chmod +x /usr/local/bin/report-render \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/ngl/VERSION \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/igv/igv.min.js \
  && test -s /opt/taffish-report-render/python/taffish_report_render/runtime_packs/igv/VERSION \
- && report-render --version | grep -Fx "taffish-report-render 0.4.0-r1" >/dev/null \
+ && report-render --version | grep -Fx "taffish-report-render 0.4.1-r1" >/dev/null \
  && python3 -c 'from pathlib import Path; from taffish_report_render.cli import mime_type_for_path; expected={".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".webp":"image/webp",".svg":"image/svg+xml"}; assert all(mime_type_for_path(Path("figure"+suffix)) == mime for suffix,mime in expected.items())' \
  && report-render components > /tmp/taffish-components.txt \
  && grep -F native_subreport_collection /tmp/taffish-components.txt >/dev/null \

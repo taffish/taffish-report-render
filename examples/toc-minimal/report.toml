@@ -1,4 +1,8 @@
 template = "taffish-flow-report"
+# 默认随阅读展开；省略本表也相同。需要 0.4.0 手动按钮时改为 "manual"。
+[toc]
+interaction = "follow"
+
 [project]
 title.zh = "人工目录示例"
 title.en = "Synthetic TOC example"

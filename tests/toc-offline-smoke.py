@@ -29,12 +29,25 @@ def main():
         run("render", "--spec", spec, "--root", root, "--out", report, "--validate")
         inspected = json.loads(run("inspect-html", report, "--validate", "--json"))
         assert inspected["toc"] == explained["toc"]
+        assert inspected["toc"]["interaction"] == "follow"
+        assert inspected["toc"]["version"] == 2
         assert inspected["toc"]["hidden_count"] == 210
         assert inspected["toc"]["visible_count"] == 29
         assert inspected["data_image_count"] == 20
         assert explained["component_count"] == 212
         assert json.loads((report.parent / "report_toc.json").read_text()) == inspected["toc"]
         run("list-assets", report, "--json")
+        before["toc"] = {"interaction": "manual"}
+        json_path.write_text(json.dumps(before))
+        toml_path.write_text(run("migrate", "--spec", json_path, "--root", root, "--format", "toml"))
+        assert before == json.loads(run("migrate", "--spec", toml_path, "--root", root, "--format", "json"))
+        manual_report = root / "manual" / "report.html"
+        run("render", "--spec", toml_path, "--root", root, "--out", manual_report, "--validate")
+        manual = json.loads(run("inspect-html", manual_report, "--validate", "--json"))
+        assert manual["toc"]["interaction"] == "manual"
+        assert manual["toc"]["nodes"] == inspected["toc"]["nodes"]
+        assert 'class="toc-controls"' not in report.read_text()
+        assert 'class="toc-controls"' in manual_report.read_text()
     print("TOC_OFFLINE_SMOKE_OK targets=19 windows=190 hidden=210 visible=29 components=212")
 
 

@@ -20,10 +20,10 @@ Package identity:
 
 - name: `taffish-report-render`
 - command: `taf-taffish-report-render`
-- TAFFISH version: `0.4.0-r1`
+- TAFFISH version: `0.4.1-r1`
 - kind: `tool`
-- image candidate: `ghcr.io/taffish/taffish-report-render:0.4.0-r1`
-- runtime identity: `taffish-report-render 0.4.0-r1`
+- image candidate: `ghcr.io/taffish/taffish-report-render:0.4.1-r1`
+- runtime identity: `taffish-report-render 0.4.1-r1`
 - native platforms: `linux/amd64`, `linux/arm64`
 
 This is an unpublished successor candidate. Publication and system installation
@@ -296,13 +296,20 @@ Use `taf-taffish-report-render component-doc COMPONENT` for concise CLI field
 documentation, or read the full
 [component reference](docs/components.en.md).
 
-## Hierarchical Navigation (0.4)
+## Reading-Follow and Hierarchical Navigation (0.4.1)
 
 Sections can declare `toc.parent`, `toc.collapsed`, and localized `toc.title`.
 Every component can declare `toc.visible` and `toc.title`. Hiding a TOC entry
-preserves its full body, anchor, downloads, and asset records. Deep links expand
-ancestors; links and independent collapse buttons have separate actions.
-No `toc` means legacy navigation. This is a new unpublished candidate, not an
+preserves its full body, anchor, downloads, and asset records. Ordinary scrolling
+now follows the active chapter and its ancestors, closing unrelated branches,
+with no separate triangle buttons or bulk toolbar by default. Structural fields
+never implicitly switch interaction modes. No node `toc` retains the legacy look.
+Report-level `[toc] interaction = "manual"` explicitly restores 0.4.0 independent
+collapse controls. `collapsed` controls initial/manual state; the active reading
+path takes precedence in follow mode. Focused navigation branches remain open
+until focus leaves, without stealing keyboard focus or moving the reading viewport.
+Existing 0.4.0 TOML remains valid, but the default interaction intentionally changes.
+This is a new unpublished candidate, not an
 instruction to replace installed renderers. See [English](docs/toc.en.md) /
 [中文](docs/toc.zh.md) and [minimal example](examples/toc-minimal/report.toml).
 
@@ -345,7 +352,8 @@ payloads and generated `tests/*-out/` directories are ignored.
 
 The two orchestrators remain `tests/smoke.sh` and `tests/test-real-run.sh`.
 `toc_fixture.py`, `toc-offline-smoke.py`, `image-offline-smoke.py` and
-`browser-toc.cjs` are focused fixtures/checkers, not alternative renderers.
+`browser-toc.cjs`, `browser-follow.cjs` and `prepare-toc-browser.py` are focused
+fixtures/checkers, not alternative renderers.
 Smoke requires a fresh output directory; it does not delete an existing path.
 
 ## Reproducible Candidate Build
@@ -354,12 +362,12 @@ Run from the app root, matching canonical Action `context: .` and
 `file: docker/Dockerfile`:
 
 ```sh
-docker build --platform linux/amd64 -f docker/Dockerfile -t taffish-report-render:0.4.0-r1-amd64 .
-docker build --platform linux/arm64 -f docker/Dockerfile -t taffish-report-render:0.4.0-r1-arm64 .
+docker build --platform linux/amd64 -f docker/Dockerfile -t taffish-report-render:0.4.1-r1-amd64 .
+docker build --platform linux/arm64 -f docker/Dockerfile -t taffish-report-render:0.4.1-r1-arm64 .
 docker run --rm --network none --read-only --tmpfs /tmp:rw,exec,nosuid,nodev \
-  taffish-report-render:0.4.0-r1-arm64 python3 /opt/taffish-report-render/tests/toc-offline-smoke.py
+  taffish-report-render:0.4.1-r1-arm64 python3 /opt/taffish-report-render/tests/toc-offline-smoke.py
 docker run --rm --network none --read-only --tmpfs /tmp:rw,exec,nosuid,nodev \
-  taffish-report-render:0.4.0-r1-arm64 python3 /opt/taffish-report-render/tests/image-offline-smoke.py
+  taffish-report-render:0.4.1-r1-arm64 python3 /opt/taffish-report-render/tests/image-offline-smoke.py
 ```
 
 Use the matching tag/platform on an amd64 host. A cross-architecture build can
@@ -382,17 +390,18 @@ maintainer tools, not runtime image dependencies):
 ```sh
 PYTHONDONTWRITEBYTECODE=1 TAFFISH_REPORT_RENDER_SMOKE_OUT=/path/to/new-smoke bash tests/smoke.sh
 bash tests/test-real-run.sh --outdir /path/to/new-real-run
-PYTHONPATH=python python3 tests/toc_fixture.py --outdir /path/to/new-long-fixture
-PYTHONPATH=python bin/report-render render --spec /path/to/new-long-fixture/report.toml \
-  --root /path/to/new-long-fixture --out /path/to/new-long-fixture/output/report.html --validate
+PYTHONPATH=python python3 tests/prepare-toc-browser.py --renderer "$PWD/bin/report-render" \
+  --outdir /path/to/new-toc-cases
+TAFFISH_TEST_BROWSER=/path/to/chrome node tests/browser-follow.cjs \
+  /path/to/new-toc-cases /path/to/new-follow-receipt
 TAFFISH_TEST_BROWSER=/path/to/chrome node tests/browser-toc.cjs \
-  /path/to/new-long-fixture/output/report.html /path/to/new-browser-receipt
+  /path/to/new-toc-cases/manual/report.html /path/to/new-manual-receipt
 ```
 
 Real-run fixture preparation and source-data requirements are documented in
 `testdata/README.md`; missing real data is not replaced with fake scientific data.
-Do not publish automatically. See the [release checklist](validation/0.4.0-r1-checklist.md)
-and [machine receipt](validation/0.4.0-r1-validation-receipt.json).
+Do not publish automatically. See the [release checklist](validation/0.4.1-r1-checklist.md)
+and [machine receipt](validation/0.4.1-r1-validation-receipt.json).
 
 ## Boundaries
 

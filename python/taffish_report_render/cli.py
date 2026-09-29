@@ -3949,7 +3949,7 @@ def render_report(spec: dict[str, Any], root: Path, spec_path: Path | None = Non
       <div class="language-switch" aria-label="Language">
         {language_buttons}
       </div>
-      <nav class="section-nav" aria-label="Report sections" data-toc-mode="{toc_index['mode']}">
+      <nav class="section-nav" aria-label="Report sections" data-toc-mode="{toc_index['mode']}" data-toc-interaction="{toc_index['interaction']}">
         {"".join(nav)}
       </nav>
       <div class="sidebar-external" aria-label="TAFFISH links">
@@ -4500,6 +4500,7 @@ def report_json_schema() -> dict[str, Any]:
             "template_version": {"type": "string"},
             "languages": {"type": "array", "items": {"type": "string"}},
             "language_default": {"type": "string"},
+            "toc": {"$ref": "#/$defs/reportToc"},
             "project": {
                 "type": "object",
                 "required": ["title"],
@@ -4520,6 +4521,10 @@ def report_json_schema() -> dict[str, Any]:
             },
         },
         "$defs": {
+            "reportToc": {
+                "type": "object", "additionalProperties": False,
+                "properties": {"interaction": {"type": "string", "enum": ["follow", "manual"], "default": "follow"}},
+            },
             "tocI18nText": {
                 "type": "object", "minProperties": 1,
                 "additionalProperties": {"type": "string", "minLength": 1, "pattern": "\\S"},
@@ -4659,6 +4664,11 @@ def dump_toml_spec(manifest: dict[str, Any]) -> str:
         if key in manifest:
             lines.append(f"{key} = {toml_scalar(manifest[key])}")
     lines.append("")
+    if "toc" in manifest:
+        lines.append("[toc]")
+        for key, value in manifest["toc"].items():
+            lines.append(f"{key} = {toml_scalar(value)}")
+        lines.append("")
     lines.append("[project]")
     project = manifest.get("project", {})
     for key, value in project.items():

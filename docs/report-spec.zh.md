@@ -1,6 +1,6 @@
 # Report Spec 结构
 
-0.4 候选增加独立目录 DSL：参见 [目录配置与兼容性](toc.zh.md)。旧 spec 不填写 `toc` 时保持旧目录语义。
+0.4.1 默认延续随读目录，同时支持层级与隐藏：参见 [目录配置与兼容性](toc.zh.md)。报告根 `[toc] interaction = "manual"` 可显式恢复 0.4.0 手动体验；节点字段不再决定交互模式。
 
 `taffish-report-render` 的输入是一个结构化 spec，通常写成 `report.toml`。
 TOML 是人类友好的前端；renderer 会把它归一化成 canonical JSON，并和最终 HTML 一起保存。
@@ -103,7 +103,7 @@ taf-taffish-report-render migrate --spec report.toml --root OUTDIR --format json
 ```toml
 [project]
 flow_name = "rnaseq-standard-flow"
-flow_version = "0.4.0-r1"
+flow_version = "0.4.1-r1"
 analysis_mode = "reference"
 title.zh = "TAFFISH RNA-seq 项目报告"
 title.en = "TAFFISH RNA-seq project report"

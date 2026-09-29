@@ -49,8 +49,8 @@ NGS-QC/phylogeny 输入和明确标记的 NGL/IGV interface shim；它不读取�
 
 这些 fixture 还用于回归检查报告组件抽象本身：
 
-- 未配置 toc 时，section/component 保留旧两层目录；0.4 显式目录配置则按稳定 ID
-  构树，独立折叠并将隐藏组件高亮映射到所属章节；两种模式均独立回归；
+- 未配置 toc 时，section/component 保留旧两层目录；0.4.1 的多级/隐藏目录默认仍随阅读位置
+  展开完整路径，只有显式 `toc.interaction="manual"` 才独立折叠；隐藏组件高亮映射到所属章节；
 - plot、table、native subreport 等不同组件各自使用固定布局，不能互相拉伸；
 - collection 组件只作为编译期便利写法，必须在测试中展开为普通 `plot_card`、
   `table_preview`、`code_file` 或 `native_subreport`，并写入 `report.normalized.json`；
@@ -208,7 +208,14 @@ smoke 和真实报告回归不能共用目录。
 0.4 的目录场景由 `tests/toc_fixture.py` 生成无客户数据的人工长报告：19 个目标、
 190 个比对窗口、212 个组件；29 个可见、210 个隐藏目录节点（含自动章节）。
 `tests/toc-offline-smoke.py` 作为统一 smoke/镜像 manifest 调用的 helper 验证真实 CLI，
-`tests/browser-toc.cjs` 验证最终 HTML 的交互/截图。后者可在两个必需路径参数后继续传入
+0.4.1 的 `tests/prepare-toc-browser.py` 生成 8 组配置，默认 follow 与显式 manual 分开验收。
+`tests/browser-follow.cjs` 用真实滚轮测试旧目录、仅隐藏图片、仅短标题、空 toc 表及多层路径，
+另检查键盘焦点、历史、语言、正文一致性；`tests/browser-toc.cjs` 专测显式 manual HTML。
+follow 默认矩阵还覆盖 390/640/980/981/1280px × 中英文的无 hash 连续前进和后退：
+每组 110 次真实滚轮采样，以实时 DOM 几何独立核对高亮/祖先路径、隐藏窗口归属、焦点/hash、
+阅读进度与空闲稳定性。另用无短标题的长目录覆盖 390/640px × 双语，检查高亮加粗换行；
+合计 14 组、1540 次连续滚轮采样。不能用深层锚点初始化代替这组测试；失败必须非零退出。
+后者可在两个必需路径参数后继续传入
 legacy basic report 和 structured-notes report，补测原生子报告、旧导航、竖图与 lightbox。
 这些 helper 不另造 renderer、不用客户报告充当可公开的长报告示例。
 

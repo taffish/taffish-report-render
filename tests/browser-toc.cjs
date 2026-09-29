@@ -23,6 +23,7 @@ const { pathToFileURL } = require('node:url');
   const opened = id => page.locator(`[data-toc-toggle="${id}"]`).getAttribute('aria-expanded');
   const toggle = id => page.locator(`[data-toc-toggle="${id}"]`).click();
   await page.goto(url);
+  assert.equal(await page.locator('.section-nav').getAttribute('data-toc-interaction'), 'manual', 'This suite requires an explicitly manual fixture; follow is tested separately.');
   await check('initial collapsed chapter and hidden windows', async () => {
     assert.equal(await opened('positions'), 'false');
     assert.equal(await page.locator('.toc-tree > li[data-toc-node^="candidate_"]').count(), 0);

@@ -1,0 +1,387 @@
+{
+  "schema_version": "taffish.report-render.validation-receipt/v1.0.0",
+  "package": "taffish-report-render",
+  "version": "0.4.1-r1",
+  "date": "2026-09-29",
+  "sealed_at": "2026-09-29T09:06:11.813823+00:00",
+  "release_decision": "publish_ready_not_published",
+  "publish_executed": false,
+  "install_executed": false,
+  "cpu5_deployed": false,
+  "scientific_recomputation": false,
+  "evidence_root": "docs-for-codex/report-render-evidence/0.4.1-r1-repair-20260929",
+  "source": {
+    "base_tag": "v0.4.0-r1",
+    "base_commit": "22ccf8e5bdd1f9a49010c4f4c3732cac4b4e993a",
+    "task_start_git_clean": false,
+    "candidate_commit": null,
+    "commit_policy": "Maintainer-controlled taf publish; no commit created",
+    "inventory": "source-inventory.json",
+    "inventory_sha256": "f4fc18e0161f4eeaeda8112aae3ea69f27b31ac2769026f57c212a8fdead7200",
+    "snapshot": "source-candidate.tar.gz",
+    "snapshot_sha256": "441936a2efed47581988eed3ffd15bc3aa1553083a1bd356097553ace6c187be",
+    "exclusion": "This receipt itself, .git and ignored generated outputs; ignored release.md explicitly included",
+    "tracked_diff_sha256": "225970efe88c41a1cf8e1a762e4501d1f5447ebeb2a12ea32e16110a975d305e",
+    "image_input_inventory_sha256": "f498b8f917d507071137e78437c66941e08d04b8ce6a55526b2f17d5c2098c54",
+    "original_implementation_start_git_clean": true,
+    "repair_start": "Existing unpublished dirty 0.4.1-r1 candidate; prior changes preserved"
+  },
+  "contract": {
+    "schema": "0.1",
+    "template": "taffish-flow-report-render-0.4",
+    "toc_index_version": 2,
+    "default_interaction": "follow",
+    "manual_opt_in": "report-root toc.interaction = manual",
+    "node_fields_independent_of_interaction": true,
+    "old_v1_html_inspection": true,
+    "collapsed_priority": "initial/manual state; active reading path overrides in follow",
+    "keyboard_focus": "defer automatic branch closing while focused; never steal focus",
+    "viewport": "Body-relative cached anchors plus live main position; after branch/highlight layout settle, compensate only residual visible-body displacement. No section jump/hash/focus change; desktop sidebar reveals active item independently."
+  },
+  "workflow": {
+    "task_start_fresh_final_sha256": "c1f2fa9d87561bb49447ce346dcb2d4d246fa0b1196d02eca10df6afbe5f12ca",
+    "changed": false,
+    "fresh_taf": "0.11.0",
+    "cmp_exit": 0,
+    "mode": "100644",
+    "context": ".",
+    "file": "docker/Dockerfile",
+    "runners": [
+      "ubuntu-24.04",
+      "ubuntu-24.04-arm"
+    ],
+    "github_action_executed": false,
+    "buildtime_browser_or_pdf": false
+  },
+  "tests": {
+    "source_smoke": "PASS",
+    "unit_count": 38,
+    "real_run": "PASS",
+    "real_run_count": 14,
+    "backend_matrix": {
+      "docker-arm64-final": {
+        "status": "PASS",
+        "probes": 52,
+        "max_wall_seconds": 4.393,
+        "receipt": "docker-arm64-final/receipt.json"
+      },
+      "docker-amd64-final": {
+        "status": "PASS",
+        "probes": 52,
+        "max_wall_seconds": 10.789,
+        "receipt": "docker-amd64-final/receipt.json"
+      },
+      "podman-amd64-final": {
+        "status": "PASS",
+        "probes": 52,
+        "max_wall_seconds": 11.654,
+        "receipt": "podman-amd64-final/receipt.json"
+      },
+      "apptainer-amd64-final": {
+        "status": "PASS",
+        "probes": 26,
+        "max_wall_seconds": 11.866,
+        "receipt": "apptainer-amd64-final/receipt.json"
+      }
+    },
+    "direct_probe_count": 182,
+    "combined_exist": 1,
+    "individual_exist": 3,
+    "manifest_tests": 22,
+    "timeout_seconds": 60,
+    "source_body_compatibility": {
+      "baseline": "v0.3.3-r1",
+      "candidate": "0.4.1-r1",
+      "byte_identical": true,
+      "body_bytes": 899576,
+      "body_sha256": "b076c487cba7d69190e2c61f0de123e33c6ddb29991aa14222b6ce0cbf5fe935"
+    },
+    "old_browser_compatibility": {
+      "status": "PASS",
+      "browser": "154.0.8037.58",
+      "result": {
+        "0.3.3-r1": [
+          {
+            "active": "alpha1",
+            "open": [
+              "#alpha"
+            ]
+          },
+          {
+            "active": "beta1",
+            "open": [
+              "#beta"
+            ]
+          },
+          {
+            "active": "alpha2",
+            "open": [
+              "#alpha"
+            ]
+          }
+        ],
+        "0.4.1-r1": [
+          {
+            "active": "alpha1",
+            "open": [
+              "#alpha"
+            ]
+          },
+          {
+            "active": "beta1",
+            "open": [
+              "#beta"
+            ]
+          },
+          {
+            "active": "alpha2",
+            "open": [
+              "#alpha"
+            ]
+          }
+        ]
+      }
+    },
+    "negative_image_probes": {
+      "status": "PASS",
+      "anchor_cli_negatives": 6,
+      "render_without_validate_rejected": true,
+      "smoke_child_original_exit": 42,
+      "real_diagnostic_visible": true
+    },
+    "synthetic": {
+      "targets": 19,
+      "windows": 190,
+      "components": 212,
+      "visible_toc": 29,
+      "hidden_toc": 210,
+      "strict_lint": [
+        0,
+        0
+      ]
+    },
+    "mime_fungal_equivalent_data_image_count": 8,
+    "webp": "data:image/webp;base64,"
+  },
+  "wrapper": {
+    "taffish": "0.11.0",
+    "matrix": {
+      "wrapper-docker-arm64-final": {
+        "status": "PASS",
+        "calls": 25,
+        "receipt": "wrapper-docker-arm64-final/receipt.json"
+      },
+      "xjp-wrapper-final/wrapper-docker": {
+        "status": "PASS",
+        "calls": 25,
+        "receipt": "xjp-wrapper-final/wrapper-docker/receipt.json"
+      },
+      "xjp-wrapper-final/wrapper-podman": {
+        "status": "PASS",
+        "calls": 25,
+        "receipt": "xjp-wrapper-final/wrapper-podman/receipt.json"
+      },
+      "xjp-wrapper-final/wrapper-apptainer": {
+        "status": "PASS",
+        "calls": 25,
+        "receipt": "xjp-wrapper-final/wrapper-apptainer/receipt.json"
+      }
+    },
+    "calls": 100,
+    "actual_bind": "PASS",
+    "input_unchanged": "PASS",
+    "output_owner": "ordinary host uid; Docker --user policy",
+    "wrapper_sha256": "23c6207897c037b01f1f06883760ffe41bf37d4aaa0852c82230e829888442f7",
+    "plain_argv": "TAFFISH core limitation remains; validated literal quoting workaround",
+    "newline_paths": "unsupported in wrapper; direct container argv alternative"
+  },
+  "browser": {
+    "final_reports": "image-browser (8 synthetic cases from actual target wrapper + final arm64 OCI)",
+    "follow": {
+      "browser": "154.0.8037.58",
+      "checks": [
+        "long-toc-titles 390px zh continuous forward/backward reading",
+        "long-toc-titles 390px en continuous forward/backward reading",
+        "long-toc-titles 640px zh continuous forward/backward reading",
+        "long-toc-titles 640px en continuous forward/backward reading",
+        "follow 390px zh continuous forward/backward reading",
+        "follow 390px en continuous forward/backward reading",
+        "follow 640px zh continuous forward/backward reading",
+        "follow 640px en continuous forward/backward reading",
+        "follow 980px zh continuous forward/backward reading",
+        "follow 980px en continuous forward/backward reading",
+        "follow 981px zh continuous forward/backward reading",
+        "follow 981px en continuous forward/backward reading",
+        "follow 1280px zh continuous forward/backward reading",
+        "follow 1280px en continuous forward/backward reading",
+        "legacy follows ordinary reading",
+        "hide-only follows ordinary reading",
+        "title-only follows ordinary reading",
+        "empty-toc follows ordinary reading",
+        "ordinary deep scroll overrides collapsed and expands only active path",
+        "cross-chapter reading closes unrelated paths",
+        "deep link, navigation, history and repeated hash",
+        "keyboard focus is not hidden or stolen by reading updates",
+        "1600px zh follow layout",
+        "1600px en follow layout",
+        "1280px zh follow layout",
+        "1280px en follow layout",
+        "390px zh follow layout",
+        "390px en follow layout",
+        "manual is explicit even without structural fields",
+        "print media keeps every body component despite closed navigation"
+      ],
+      "errors": [],
+      "remote": [],
+      "status": "PASS",
+      "simpleBodySHA256": "c1382c02510e077c9a78eb06151f311d7344f609739cdab2389ab9c7955eac41",
+      "printDOM": {
+        "expected": 212,
+        "visible": 212
+      },
+      "continuous_groups": 14,
+      "continuous_samples": 1540,
+      "receipt": "browser-follow-final/browser-follow-receipt.json"
+    },
+    "manual": {
+      "browser": "154.0.8037.58",
+      "report": "/private/tmp/taffish-report-041-final.qCctXt/image-browser/manual/report.html",
+      "checks": [
+        "initial collapsed chapter and hidden windows",
+        "deep hidden anchor opens all ancestors",
+        "independent collapse never hides body",
+        "link versus toggle, keyboard and history",
+        "1600 zh layout and active owner",
+        "1600 en layout and active owner",
+        "1280 zh layout and active owner",
+        "1280 en layout and active owner",
+        "390 zh layout and active owner",
+        "390 en layout and active owner",
+        "200 percent equivalent reflow at 640 CSS pixels",
+        "print does not inherit toc collapse",
+        "legacy navigation and native subreport interaction",
+        "portrait media and lightbox compatibility"
+      ],
+      "errors": [],
+      "remote": [],
+      "print_scope": "body visibility; full pagination acceptance separate"
+    },
+    "visual_review": "Desktop active row, narrow long titles and four bilingual follow/manual print sample pages inspected; full pagination not claimed"
+  },
+  "print": {
+    "follow": {
+      "zh": {
+        "pages": 101,
+        "alignment_window_titles": 190,
+        "all_19_targets_present": true,
+        "sha256": "fcfba6c4ad09e79757859e0734aab42c63fce22628f0fe1c4121af6c2d6ac263"
+      },
+      "en": {
+        "pages": 103,
+        "alignment_window_titles": 190,
+        "all_19_targets_present": true,
+        "sha256": "1fa1ba8ae497f0d6a07bddb87587193b252227747e783ad43a3fd45541b04edd"
+      },
+      "visual_scope": "中英样张检查；完整逐页分页美术验收未声明 PASS。目录折叠/隐藏不丢正文。"
+    },
+    "manual": {
+      "zh": {
+        "pages": 101,
+        "alignment_window_titles": 190,
+        "all_19_targets_present": true,
+        "sha256": "864f1b33d7a2bd69a120594e068e4186f79a2b5fa0b625dd24d8c4c4a9245391"
+      },
+      "en": {
+        "pages": 103,
+        "alignment_window_titles": 190,
+        "all_19_targets_present": true,
+        "sha256": "4bc43d3f817874ff8330b00c411ea9a0be7438162571beff29fb601d37af02c6"
+      },
+      "visual_scope": "中英样张检查；完整逐页分页美术验收未声明 PASS。目录折叠/隐藏不丢正文。"
+    },
+    "scope": "190 windows and 19 targets in each PDF; sample-page visual review, not complete pagination/art acceptance"
+  },
+  "images": {
+    "arm64": {
+      "id": "sha256:320a852c3ddc2acdc442efb631c3eba780844927771edd4fa240aa7fdc0b2073",
+      "size_bytes": 57361967,
+      "architecture": "arm64",
+      "build_context": ".",
+      "build": "native",
+      "native_runtime": "PASS",
+      "payload_files": 45,
+      "payload_matches_source": true,
+      "profile": "inspect/history/du; pip/ensurepip/headers absent; runtime Bash retained"
+    },
+    "amd64": {
+      "id": "sha256:d6cd2c79f11493d3c528b48150b08760f7444a292534510c08deb5c3452fa86c",
+      "size_bytes": 50852202,
+      "architecture": "amd64",
+      "build_context": ".",
+      "build": "emulated",
+      "native_runtime": "PASS",
+      "payload_files": 45,
+      "payload_matches_source": true,
+      "profile": "inspect/history/du; pip/ensurepip/headers absent; runtime Bash retained"
+    }
+  },
+  "remote": {
+    "host": "xjp",
+    "uid": 1001,
+    "gid": 1001,
+    "architecture": "x86_64",
+    "docker": "26.1.5+dfsg1",
+    "podman": "5.4.2",
+    "apptainer": "1.5.3",
+    "private_directory_mode": "0700",
+    "oci_sha256": "22c9e19a9e904aec90acfa109a6de2f36c9982375752baa058e0845719282041",
+    "sif_sha256": "22b3f4f1ded02d400329d21799aadc985ea128e238b4b43c79b621d6b44fcc67",
+    "wrapper_archive_sha256": "e69a0a925f5ebe334f03e1438f2a512f269c74cb07bd419124fec439f23ad37b",
+    "cleanup": "PASS; exact private root and owned candidate tags",
+    "sudo_system_install_shared_permissions": false,
+    "private_directory": "/tmp/taffish-report-041-final.no2mUl",
+    "extra_transfer_directory": "/tmp/taffish-report-041-final.XnsOxq; verified duplicate artifacts only; exact cleanup PASS"
+  },
+  "gates": {
+    "taf_check": "PASS",
+    "taf_build": "PASS",
+    "docs_checker": "PASS",
+    "help_lines": 90,
+    "git_diff_check": "PASS",
+    "hubctl": "candidate ahead of published v0.4.0-r1",
+    "publish_dry_run": "remote checked; outcome planned only",
+    "registry": "Not independently rechecked this repair; authenticated publish dry-run confirmed candidate tag/release missing",
+    "target_clean": "PASS",
+    "target_entries": [
+      ".gitkeep"
+    ],
+    "git_status_short_target": "",
+    "target_backup": "target-final-backup.tar.gz",
+    "hub_docs_layout": "Historical 3 broken relative links in old 0.4.0 target backups; not modified or reclassified as PASS"
+  },
+  "resources": {
+    "runtime_write_map": "read-only install; bytecode disabled; fresh /tmp scratch; explicit output with actual bind",
+    "database_model_download": "N/A: project-specific user inputs, no shared resource family required",
+    "bundled_runtimes": "Pinned ECharts/Plotly/NGL/IGV with unchanged source/checksum/notices",
+    "app_license": "Apache-2.0",
+    "bash_license": "GPL-3.0-or-later",
+    "bash": "5.3.9-r1",
+    "gui_type": "Static offline interactive HTML; daemon/noVNC/ports/INT-TERM process supervision N/A"
+  },
+  "limitations": [
+    "Native arm64 build and native runtime; amd64 build emulated locally, native runtime on xjp",
+    "arm64 Podman/Apptainer not separately validated; no all-platform/backend cross-product claim",
+    "Chrome only; Firefox/Safari and full PDF pagination/art not separately validated",
+    "Future GitHub Action/GHCR build and cpu5 deployment/scientific acceptance remain separate",
+    "TAFFISH 0.11.0 ordinary argv quoting limitation not fixed; documented workaround passed",
+    "Fresh base build still depends on fixed Alpine Bash revision availability; OCI retained"
+  ],
+  "preserved_diagnostics": [
+    "Prior initial implementation and independent blocking audit remain immutable in sibling evidence directories",
+    "Pre-fix continuous-scroll regression FAIL; relative-coordinate-only intermediate FAIL on 640px backward scroll",
+    "Intermediate 26-case PASS predates final post-highlight residual compensation; not used as final runtime evidence",
+    "SCP duplicate private directory verified by owner/mode/file inventory and hashes then removed; tests used distinct recorded directory",
+    "Sandbox Chrome startup failed; authorized isolated headless rerun passed; original log retained"
+  ],
+  "audit_iteration": "narrow-screen-follow-repair-final"
+}

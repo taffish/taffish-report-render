@@ -41,7 +41,7 @@ ngs_fixture_root="$smoke_fixture_root/ngs-qc"
 phylogeny_fixture_root="$smoke_fixture_root/phylogeny"
 
 echo "[SMOKE] version and components"
-"$renderer" --version | grep -Fx "taffish-report-render 0.4.0-r1" >/dev/null
+"$renderer" --version | grep -Fx "taffish-report-render 0.4.1-r1" >/dev/null
 "$renderer" components | grep -F "native_subreport" >/dev/null
 "$renderer" components | grep -F "code_file" >/dev/null
 "$renderer" components | grep -F "structure_viewer" >/dev/null
@@ -333,7 +333,7 @@ language_default = "zh"
 
 [project]
 flow_name = "media-layout-regression"
-flow_version = "0.4.0-r1"
+flow_version = "0.4.1-r1"
 analysis_mode = "component-regression"
 title.en = "Media Layout Regression"
 title.zh = "媒体布局回归测试"
@@ -922,7 +922,7 @@ language_default = "zh"
 
 [project]
 flow_name = "bio-viewer-smoke"
-flow_version = "0.4.0-r1"
+flow_version = "0.4.1-r1"
 analysis_mode = "bio-viewers"
 title.zh = "生信浏览器组件测试"
 title.en = "Bio Viewer Component Smoke"
@@ -1011,7 +1011,7 @@ language_default = "zh"
 
 [project]
 flow_name = "policy-smoke"
-flow_version = "0.4.0-r1"
+flow_version = "0.4.1-r1"
 analysis_mode = "native-subreport-policy"
 title.zh = "子报告策略测试"
 title.en = "Subreport Policy Smoke"

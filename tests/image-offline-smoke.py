@@ -62,7 +62,7 @@ def check_sidecars(root: Path, expected_images: int) -> None:
 
 def main() -> int:
     require(
-        run(RENDERER, "--version").stdout.strip() == "taffish-report-render 0.4.0-r1",
+        run(RENDERER, "--version").stdout.strip() == "taffish-report-render 0.4.1-r1",
         "release version mismatch",
     )
     components = run(RENDERER, "components").stdout
@@ -136,7 +136,7 @@ def main() -> int:
         )
         check_sidecars(fungal_root, 7)
 
-    print("IMAGE_OFFLINE_SMOKE_OK version=0.4.0-r1 core_images=5 fungal_images=8")
+    print("IMAGE_OFFLINE_SMOKE_OK version=0.4.1-r1 core_images=5 fungal_images=8")
     return 0
 
 

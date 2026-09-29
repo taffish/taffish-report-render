@@ -71,7 +71,6 @@
     }
     if (!sections.length) return;
 
-    var currentId = "";
 
     function measure() {
       for (var i = 0; i < sections.length; i++) {
@@ -85,14 +84,14 @@
     }
 
     function activate(id) {
-      if (id === currentId) return;
-      currentId = id;
       for (var j = 0; j < links.length; j++) {
         links[j].classList.remove("active");
+        links[j].removeAttribute("aria-current");
       }
       var activeLink = linkById[id];
       if (!activeLink) return;
       activeLink.classList.add("active");
+      activeLink.setAttribute("aria-current", "location");
 
       var activeGroup = activeLink.closest
         ? activeLink.closest(".nav-group")
@@ -101,7 +100,7 @@
       for (var g = 0; g < groups.length; g++) {
         if (activeGroup && groups[g] === activeGroup) {
           groups[g].setAttribute("open", "");
-        } else {
+        } else if (!groups[g].contains(document.activeElement)) {
           groups[g].removeAttribute("open");
         }
       }
@@ -148,6 +147,8 @@
     window.addEventListener("scroll", requestUpdate, { passive: true });
     window.addEventListener("resize", refresh);
     window.addEventListener("load", refresh);
+    window.addEventListener("taffish-language-changed", refresh);
+    document.querySelector(".section-nav").addEventListener("focusout", requestUpdate);
   }
 
   function setupEmbeddedSubreports() {

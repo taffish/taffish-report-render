@@ -18,6 +18,15 @@ AUTOMATIC_TITLES = {
 
 
 def validate_toc(spec: dict, slug: Callable[[str], str], languages: list[str]) -> None:
+    if "toc" in spec:
+        config = spec["toc"]
+        if not isinstance(config, dict):
+            raise ValueError("report toc must be a table")
+        unknown = sorted(set(config) - {"interaction"})
+        if unknown:
+            raise ValueError(f"report toc has unknown or unsupported fields: {', '.join(unknown)}")
+        if config.get("interaction", "follow") not in ("follow", "manual"):
+            raise ValueError("toc.interaction must be follow or manual")
     sections = spec["sections"]
     section_ids = [slug(str(s.get("id") or f"section-{i}")) for i, s in enumerate(sections, 1)]
     ids: set[str] = set()
@@ -70,7 +79,8 @@ def validate_toc(spec: dict, slug: Callable[[str], str], languages: list[str]) -
 
 def build_toc_index(manifest: dict) -> dict[str, Any]:
     sections = manifest["sections"]
-    mode = "tree" if any("toc" in s or any("toc" in c for c in s.get("components", [])) for s in sections) else "legacy"
+    interaction = manifest.get("toc", {}).get("interaction", "follow")
+    mode = "tree" if interaction == "manual" or any("toc" in s or any("toc" in c for c in s.get("components", [])) for s in sections) else "legacy"
     nodes: list[dict] = []
 
     def add(ident: str, kind: str, parent: str | None, owner: dict, section_id: str | None) -> None:
@@ -103,13 +113,14 @@ def build_toc_index(manifest: dict) -> dict[str, Any]:
         node["ancestors"] = list(reversed(ancestors))
         node["depth"] = len(ancestors) + 1
         node["active_id"] = node["id"] if node["visible"] else node["section_id"]
-    return {"version": 1, "mode": mode, "nodes": nodes,
+    return {"version": 2, "mode": mode, "interaction": interaction, "nodes": nodes,
             "visible_count": sum(n["visible"] for n in nodes),
             "hidden_count": sum(not n["visible"] for n in nodes)}
 
 
 def render_toc(index: dict, titles: dict[str, str], label: Callable[[str, str], str]) -> str:
     """titles 已由调用方进行双语与 HTML 转义；ID 只使用已校验的 canonical slug。"""
+    manual = index["interaction"] == "manual"
     children: dict[str | None, list[dict]] = {}
     for node in index["nodes"]:
         if node["visible"]:
@@ -119,23 +130,27 @@ def render_toc(index: dict, titles: dict[str, str], label: Callable[[str, str], 
         parts = []
         for node in children.get(parent, []):
             ident = node["id"]
-            link = f'<a href="#{ident}" data-toc-link="{ident}">{titles[ident]}</a>'
+            attrs = ""
             if children.get(ident):
                 opened = not node["collapsed"]
                 button = (f'<button type="button" class="toc-toggle" data-toc-toggle="{ident}" '
                           f'aria-expanded="{str(opened).lower()}" aria-controls="toc-branch-{ident}">'
                           f'<span aria-hidden="true">▸</span><span class="toc-sr-only">'
                           f'{label("Toggle subsections", "展开或收起子目录")}: {titles[ident]}</span></button>')
-                body = f'<ul id="toc-branch-{ident}"{ "" if opened else " hidden"}>{render_children(ident)}</ul>'
+                if not manual:
+                    button = ""
+                    attrs = f' aria-expanded="{str(opened).lower()}" aria-controls="toc-branch-{ident}"'
+                body = f'<ul id="toc-branch-{ident}" data-toc-branch="{ident}"{ "" if opened else " hidden"}>{render_children(ident)}</ul>'
             else:
                 button, body = "", ""
+            link = f'<a href="#{ident}" data-toc-link="{ident}"{attrs}>{titles[ident]}</a>'
             parts.append(f'<li data-toc-node="{ident}"><div class="toc-row">{link}{button}</div>{body}</li>')
         return "".join(parts)
 
     controls = ('<div class="toc-controls">'
                 f'<button type="button" data-toc-all="expand">{label("Expand all", "全部展开")}</button>'
                 f'<button type="button" data-toc-all="collapse">{label("Collapse all", "全部收起")}</button></div>')
-    return controls + '<ul class="toc-tree">' + render_children(None) + '</ul>'
+    return (controls if manual else "") + '<ul class="toc-tree">' + render_children(None) + '</ul>'
 
 
 class TocHTMLParser(HTMLParser):
@@ -146,6 +161,7 @@ class TocHTMLParser(HTMLParser):
         self.payload: list[str] = []
         self.in_payload = False
         self.mode = None
+        self.interaction = None
 
     def handle_starttag(self, tag: str, attrs: list) -> None:
         data = dict(attrs)
@@ -153,6 +169,7 @@ class TocHTMLParser(HTMLParser):
             self.ids[data["id"]] += 1
         if "data-toc-mode" in data:
             self.mode = data["data-toc-mode"]
+            self.interaction = data.get("data-toc-interaction")
         if "data-toc-link" in data:
             if data["data-toc-link"] in self.links:
                 raise ValueError("duplicate toc link")
@@ -184,8 +201,13 @@ def inspect_toc_html(html: str, validate: bool = False) -> dict | None:
         if duplicates:
             raise ValueError(f"duplicate HTML anchor ids: {', '.join(duplicates)}")
         nodes = index["nodes"]
-        if index.get("version") != 1 or index.get("mode") not in {"tree", "legacy"}:
+        if index.get("version") not in (1, 2) or index.get("mode") not in {"tree", "legacy"}:
             raise ValueError("unsupported toc index version/mode")
+        if index["version"] == 2:
+            if index.get("interaction") not in ("follow", "manual") or index["interaction"] != parser.interaction:
+                raise ValueError("toc interaction contract mismatch")
+            if index["mode"] == "legacy" and index["interaction"] != "follow":
+                raise ValueError("legacy toc requires follow interaction")
         if any(not isinstance(n, dict) or not isinstance(n.get("id"), str) for n in nodes):
             raise ValueError("invalid toc node")
         by_id = {n["id"]: n for n in nodes}
